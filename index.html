@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexys 4 DDR Web Simulator — Artix-7 FPGA</title>
+<style>
+:root{--bg:#0d1117;--pn:#161b22;--pn-alt:#21262d;--tx:#f0f6fc;--mu:#8b949e;--bd:#30363d;--btn-bg:#21262d;--btn-border:#363b42;--vivado-blue:#388bfd;--led-green:#39d353;box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;padding:0;background:var(--bg);color:var(--tx);font:13.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;overflow:hidden}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#484f58}
+
+/* Header */
+header{height:48px;padding:0 16px;border-bottom:1px solid var(--bd);background:var(--pn);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;flex-shrink:0}
+.brand{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.badge{background:#1f6feb22;color:#58a6ff;border:1px solid #388bfd44;border-radius:4px;font-size:11px;padding:2px 6px;font-weight:500}
+.preset-select{background:var(--btn-bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;outline:none}
+.preset-select:focus{border-color:var(--vivado-blue)}
+
+/* Resizable Main Layout (with 100dvh fallback for mobile address bars) */
+main#appMain{display:flex;height:calc(100vh - 48px);height:calc(100dvh - 48px);width:100vw;padding:8px;gap:0;overflow:hidden;position:relative}
+.pane-col{display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
+#paneLeft{width:50%;min-width:140px;max-width:calc(100% - 180px);flex-shrink:0}
+#paneRight{flex:1;min-width:240px;overflow-y:auto;overflow-x:hidden;padding:0 4px}
+
+/* Cards */
+.pane-card{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;margin:0;position:relative}
+#paneEditor{height:58%;min-height:170px;max-height:calc(100% - 100px);flex-shrink:0}
+#paneLog{flex:1;min-height:90px;overflow:hidden}
+
+/* Tabs & Editor Area */
+.tabs-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;border-bottom:1px solid var(--bd);padding-bottom:5px;flex-shrink:0}
+.tabs{display:flex;gap:4px}
+.tabs button{background:none;border:1px solid transparent;color:var(--mu);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all .15s}
+.tabs button.on{background:var(--pn-alt);color:var(--tx);border-color:var(--bd)}
+.editor-wrap{flex:1;display:flex;min-height:60px;position:relative;overflow:hidden}
+textarea{width:100%;height:100%;background:#090d13;color:#e6edf3;border:1px solid var(--bd);border-radius:6px;padding:10px;font:12.5px/1.5 "JetBrains Mono",Consolas,"Courier New",monospace;resize:none;tab-size:2;outline:none}
+textarea:focus{border-color:var(--vivado-blue)}
+
+/* Toolbars & Buttons */
+.fl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flow-toolbar{margin-top:8px;flex-shrink:0}
+button.bt,.fl button{background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--tx);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all .12s;display:inline-flex;align-items:center;gap:6px;user-select:none}
+button:hover:not(:disabled){background:#30363d;border-color:#8b949e}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.35;cursor:not-allowed}
+
+/* Vivado Step Flow Buttons */
+button.step-btn-vivado{background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--tx);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:500;transition:all .15s}
+#b1:not(:disabled){color:#58a6ff;border-color:#388bfd66}
+#b1:hover:not(:disabled){background:#1f6feb22;border-color:#388bfd}
+#b2:not(:disabled){color:#58a6ff;border-color:#388bfd77}
+#b2:hover:not(:disabled){background:#1f6feb22;border-color:#388bfd}
+#b3:not(:disabled){color:#e3b341;border-color:#d2992288}
+#b3:hover:not(:disabled){background:#d2992222;border-color:#d29922}
+#bDump:not(:disabled){background:#238636;border-color:#2ea043;color:#fff;font-weight:600;box-shadow:0 0 10px rgba(46,160,67,.4);animation:pulse-dump 2s infinite}
+#bDump:hover:not(:disabled){background:#2ea043}
+@keyframes pulse-dump{0%,100%{box-shadow:0 0 8px rgba(46,160,67,.4)}50%{box-shadow:0 0 16px rgba(46,160,67,.85)}}
+.sim-btn{background:#6e40c9!important;border-color:#8957e5!important;color:#fff!important;font-weight:600}
+.sim-btn:hover:not(:disabled){background:#8957e5!important}
+
+/* Splitters / Gutters */
+.gutter-h{width:8px;cursor:col-resize;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:10;user-select:none;touch-action:none}
+.gutter-line-h{width:3px;height:38px;border-radius:2px;background:#30363d;transition:all .15s ease}
+.gutter-h:hover .gutter-line-h,.gutter-h.dragging .gutter-line-h{height:100%;background:#388bfd;box-shadow:0 0 10px rgba(56,139,253,.7)}
+
+.gutter-v{height:8px;cursor:row-resize;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:10;user-select:none;touch-action:none}
+.gutter-line-v{height:3px;width:38px;border-radius:2px;background:#30363d;transition:all .15s ease}
+.gutter-v:hover .gutter-line-v,.gutter-v.dragging .gutter-line-v{width:100%;background:#388bfd;box-shadow:0 0 10px rgba(56,139,253,.7)}
+
+body.resizing-h,body.resizing-h *{cursor:col-resize!important;user-select:none!important}
+body.resizing-v,body.resizing-v *{cursor:row-resize!important;user-select:none!important}
+
+/* Log Console */
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-shrink:0}
+#log{flex:1;height:100%;overflow-y:auto;font:11.5px/1.55 "JetBrains Mono",Consolas,monospace;background:#06090e;border:1px solid var(--bd);border-radius:6px;padding:8px 10px;white-space:pre-wrap}
+.e{color:#f85149;font-weight:600}.w{color:#d29922}.o{color:#3fb950}.i{color:#8b949e}.p{color:#58a6ff;font-weight:600}
+
+/* Nexys FPGA Board */
+.nexys-board{background:radial-gradient(circle at 50% 20%,#0d442b 0%,#062416 100%);border:2px solid #19643d;border-radius:12px;padding:14px;box-shadow:inset 0 0 40px rgba(0,0,0,.6),0 8px 24px rgba(0,0,0,.5);position:relative;margin-bottom:12px}
+.pcb-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #19643d66;padding-bottom:6px}
+.pcb-title{font-size:13px;font-weight:700;letter-spacing:1px;color:#c9d1d9}
+.chip-label{font-size:10px;color:#56d364;font-family:monospace}
+.board-sec{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:9px;margin-bottom:9px}
+.sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#8b949e;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.dg-container{display:flex;gap:5px;justify-content:center;background:#040608;padding:7px;border-radius:6px;border:1px solid #21262d;overflow-x:auto}
+.dg-digit-wrap{text-align:center}.dg-idx{font-size:9px;color:#6e7681;margin-top:3px}
+.dg{width:32px;height:52px;background:#080a0d;border-radius:3px;display:block}
+.dg rect,.dg circle{fill:#1a0808;transition:fill .04s ease-out}.dg .on{fill:#ff3333;filter:drop-shadow(0 0 3px #ff2222)}
+.led-bar{display:flex;justify-content:space-between;gap:4px;overflow-x:auto;padding:3px 0}
+.led-unit{text-align:center;flex:1;min-width:18px}
+.led{width:14px;height:14px;border-radius:50%;background:#161b22;border:1px solid #30363d;margin:0 auto 3px;transition:background .08s,box-shadow .08s}
+.led.on{background:var(--led-green);border-color:#56d364;box-shadow:0 0 8px #39d353,0 0 16px rgba(57,211,83,.5)}
+.led-unit span{font-size:9.5px;color:#8b949e;display:block}
+.sw-bar{display:flex;justify-content:space-between;gap:4px;overflow-x:auto;padding:3px 0}
+.sw-unit{text-align:center;flex:1;min-width:18px}
+.sw-slider{width:20px;height:38px;border:1px solid #30363d;border-radius:4px;background:#090d13;cursor:pointer;position:relative;margin:0 auto 3px;transition:background .12s,border-color .12s}
+.sw-slider:hover{border-color:#58a6ff}
+.sw-slider:after{content:"";position:absolute;left:2px;right:2px;height:16px;background:#30363d;border-radius:2px;top:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);transition:top .1s cubic-bezier(.4,0,.2,1),background .1s}
+.sw-slider.on{background:#1f3527;border-color:#3fb950}
+.sw-slider.on:after{top:2px;background:#2ea043}
+.sw-unit span{font-size:9.5px;color:#8b949e;display:block}
+.btn-cluster{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,34px);gap:6px;justify-content:center;margin:4px auto}
+.btn-hw{background:#21262d;border:1px solid #363b42;color:#c9d1d9;font-size:10px;font-weight:700;border-radius:6px;cursor:pointer;user-select:none;touch-action:none;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.4);transition:all .08s}
+.btn-hw:active,.btn-hw.pressed{background:#388bfd;color:#fff;transform:translateY(1px);box-shadow:0 0 10px rgba(56,139,253,.6)}
+.btn-reset{background:#441719;border-color:#da3633;color:#f85149}
+.btn-reset:active,.btn-reset.pressed{background:#da3633;color:#fff;box-shadow:0 0 12px rgba(218,54,51,.7)}
+.clk-panel{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#090d13;border:1px solid #21262d;border-radius:6px;padding:7px 10px}
+.clk-status{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600}
+.clk-led{width:10px;height:10px;border-radius:50%;background:#30363d;transition:all .08s}
+.clk-led.active{background:#58a6ff;box-shadow:0 0 8px #58a6ff}
+.rgb-wrap{display:flex;gap:16px;align-items:center}
+.rgb-unit{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mu)}
+.rgb-led{width:18px;height:18px;border-radius:50%;background:#12151b;border:1px solid #30363d;transition:all .08s}
+
+/* Responsive Fallback */
+@media(max-width:960px){
+  html,body{overflow:auto;height:auto}
+  main#appMain{flex-direction:column;height:auto;overflow:visible}
+  #paneLeft{width:100%!important;max-width:100%!important;height:auto;overflow:visible}
+  .gutter-h{display:none}
+  #paneEditor{height:auto!important;min-height:340px}
+  .editor-wrap{height:280px}
+  #paneLog{height:220px;min-height:200px}
+  #paneRight{width:100%!important;overflow:visible}
+}
+
+/* Developer Branding Rectangular Box (Right side below board) */
+.dev-board-box{background:linear-gradient(135deg,#161b22 0%,#0e131a 100%);border:1.5px solid #30363d;border-left:4px solid var(--vivado-blue);border-radius:10px;padding:12px 18px;margin-top:10px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;box-shadow:0 4px 16px rgba(0,0,0,.45);flex-shrink:0}
+.dev-box-left{display:flex;align-items:center;gap:12px;min-width:240px}
+.dev-box-chip{width:40px;height:40px;background:#1f6feb22;border:1px solid #388bfd55;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(56,139,253,.2)}
+.dev-box-details{display:flex;flex-direction:column;gap:1px}
+.dev-box-eyebrow{font-size:10px;font-weight:700;color:var(--vivado-blue);letter-spacing:.9px;text-transform:uppercase}
+.dev-box-author{font-size:15px;font-weight:800;color:#f0f6fc;letter-spacing:.6px}
+.dev-box-tagline{font-size:11px;color:var(--mu);letter-spacing:.2px}
+.dev-box-links{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dev-box-btn{display:inline-flex;align-items:center;gap:7px;background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--tx);padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:all .15s ease}
+.dev-box-btn:hover{background:#30363d;border-color:#58a6ff;color:#58a6ff;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.dev-box-btn.dev-li-btn:hover{border-color:#0a66c2;color:#58a6ff;box-shadow:0 3px 10px rgba(10,102,194,.25)}
+
+/* Default View Button styling in Toolbar */
+.sim-default-btn{color:#58a6ff!important;border-color:#388bfd66!important;font-weight:600!important}
+.sim-default-btn:hover{background:#1f6feb22!important;border-color:#388bfd!important}
+
+/* Simulation View & Size Toolbar */
+.sim-view-toolbar{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0}
+.sim-ctrl-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.sim-ctrl-label{font-size:11px;font-weight:600;color:var(--mu);display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.5px}
+.sim-zoom-btn{padding:3px 8px;font-size:11.5px;line-height:1.2}
+.sim-zoom-reset{min-width:44px;font-weight:600;color:#58a6ff;border-color:#388bfd55}
+.sim-zoom-reset:hover{background:#1f6feb22;border-color:#388bfd}
+.nexys-board-wrapper{width:100%;transform-origin:top center;transition:transform .12s ease;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#388bfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+    Nexys 4 DDR Web Simulator
+    <span class="badge">Artix-7 xc7a100t</span>
+    <span class="badge" style="background:#23863622;color:#3fb950;border-color:#2ea04344">Multi-Module · Sequential · Comb</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:12px;color:var(--mu)">Load Preset:</span>
+    <select id="presetSelect" class="preset-select" onchange="loadPreset(this.value)">
+      <option value="traffic">1. Traffic Light Controller FSM (Moore)</option>
+      <option value="counter">2. 16-Bit Counter + 7-Seg (Sequential)</option>
+      <option value="johnson">3. Johnson Counter (Multi-Module)</option>
+      <option value="hex7seg">4. Hex → 7-Segment Decoder (Combinational)</option>
+      <option value="alu">5. 4-Bit ALU (Comb)</option>
+      <option value="shiftreg">6. 16-Bit Shift Register (Sequential)</option>
+    </select>
+  </div>
+</header>
+
+<main id="appMain">
+  <!-- LEFT PANE: Editor & Log Console -->
+  <div id="paneLeft" class="pane-col">
+    <!-- TOP: Code Editor -->
+    <div id="paneEditor" class="pane-card">
+      <div class="tabs-bar">
+        <div class="tabs">
+          <button id="tabBtn0" class="on" onclick="setTab(0)">Design (top.v)</button>
+          <button id="tabBtn1" onclick="setTab(1)">Testbench (tb.v)</button>
+          <button id="tabBtn2" onclick="setTab(2)">Constraints (.xdc)</button>
+        </div>
+        <button class="bt" style="font-size:11px;padding:3px 8px;margin-left:auto" onclick="restoreDefaultPreset()" title="Reset current files to preset defaults">↺ Reset Code</button>
+      </div>
+      <div class="editor-wrap">
+        <textarea id="t0" spellcheck="false"></textarea>
+        <textarea id="t1" spellcheck="false" hidden></textarea>
+        <textarea id="t2" spellcheck="false" hidden></textarea>
+      </div>
+      <div class="fl flow-toolbar">
+        <button id="b1" class="step-btn-vivado" onclick="flowSyn()" title="Run Vivado Synthesis">1. Synthesis</button>
+        <button id="b2" class="step-btn-vivado" onclick="flowImp()" disabled title="Run Vivado Implementation (Place & Route)">2. Implementation</button>
+        <button id="b3" class="step-btn-vivado" onclick="flowBit()" disabled title="Generate FPGA Bitstream (.bit)">3. Bitstream</button>
+        <button id="bDump" class="step-btn-vivado" onclick="flowDumpHardware()" disabled title="Program FPGA via JTAG">4. Hardware Dump Code</button>
+        <button id="bSim" class="step-btn-vivado sim-btn" onclick="flowSim()" style="display:none" title="Run behavioral testbench simulation">▶ Run TB Sim (XSIM)</button>
+        <div id="jtagStatus" style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mu);margin-left:4px">
+          <div id="jtagLed" style="width:10px;height:10px;border-radius:50%;background:#30363d;border:1px solid #484f58;transition:all .15s"></div>
+          <span id="jtagText">JTAG Idle</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VERTICAL SPLITTER (Up / Down Resizer) -->
+    <div id="resizerV" class="gutter-v" title="Drag up/down to resize Code Editor & Log Console">
+      <div class="gutter-line-v"></div>
+    </div>
+
+    <!-- BOTTOM: Vivado Log Console -->
+    <div id="paneLog" class="pane-card">
+      <div class="log-header">
+        <span style="font-weight:600;font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px">Vivado Log Console</span>
+        <button class="bt" style="padding:2px 8px;font-size:11px" onclick="$('log').innerHTML=''">Clear</button>
+      </div>
+      <div id="log"></div>
+    </div>
+
+
+  </div>
+
+  <!-- HORIZONTAL SPLITTER (Left / Right Resizer) -->
+  <div id="resizerH" class="gutter-h" title="Drag left/right to resize Editor/Log and Nexys FPGA Board">
+    <div class="gutter-line-h"></div>
+  </div>
+
+  <!-- RIGHT PANE: Nexys 4 DDR FPGA Board -->
+  <div id="paneRight" class="pane-col">
+    <!-- SIMULATION SIZING & VIEW CONTROLS -->
+    <div class="sim-view-toolbar">
+      <div class="sim-ctrl-group">
+        <button class="bt sim-zoom-btn sim-default-btn" onclick="resetToDefaultView()" title="Reset all views, zoom, and layout back to default (100% Scale, 50:50 Split)">↺ Default View</button>
+        <span class="sim-ctrl-label" style="margin-left:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg> Size &amp; Length:</span>
+        <button class="bt sim-zoom-btn" onclick="adjustSimScale(-0.1)" title="Zoom Out / Make Board Smaller (−)">−</button>
+        <button class="bt sim-zoom-btn sim-zoom-reset" id="simScaleVal" onclick="resetSimScale()" title="Click to Reset Size to 100%">100%</button>
+        <button class="bt sim-zoom-btn" onclick="adjustSimScale(0.1)" title="Zoom In / Make Board Bigger (+)">+</button>
+        <select id="simScaleSelect" class="preset-select" style="padding:2px 6px;font-size:11px" onchange="setSimScale(parseFloat(this.value))">
+          <option value="0.75">75% (Small)</option>
+          <option value="0.85">85% (Compact)</option>
+          <option value="1.0" selected>100% (Normal)</option>
+          <option value="1.15">115% (Medium)</option>
+          <option value="1.25">125% (Large)</option>
+          <option value="1.40">140% (Extra Large)</option>
+          <option value="1.60">160% (Huge)</option>
+          <option value="1.80">180% (Max Length)</option>
+        </select>
+        <input type="range" id="simScaleSlider" min="65" max="180" value="100" step="5" style="width:75px;accent-color:#388bfd;cursor:pointer;vertical-align:middle" title="Drag to smoothly scale simulation board length and width" oninput="setSimScale(this.value/100)">
+        <button class="bt sim-zoom-btn" onclick="fitSimToHeight()" title="Auto-scale board length to fit screen height without vertical scrolling">↕ Fit Height</button>
+      </div>
+      <div class="sim-ctrl-group">
+        <span class="sim-ctrl-label">Layout:</span>
+        <button class="bt sim-zoom-btn" onclick="setPaneSplit(50)" title="Split 50% Editor / 50% Simulation">◨ 50:50</button>
+        <button class="bt sim-zoom-btn" onclick="setPaneSplit(25)" title="Expand Simulation to 75% Width">◧ 75% Wide</button>
+        <button class="bt sim-zoom-btn" id="btnMaxSim" onclick="toggleMaxSim()" title="Maximize Simulation View (Toggle Fullscreen)">⛶ Maximize</button>
+      </div>
+    </div>
+
+    <div id="nexysBoardWrap" class="nexys-board-wrapper">
+      <div class="nexys-board">
+      <div class="pcb-header">
+        <div><div class="pcb-title">DIGILENT NEXYS 4 DDR</div><div class="chip-label">Xilinx Artix-7 FPGA (xc7a100tcsg324-1)</div></div>
+        <div id="boardBadge" class="badge" style="background:#30363d;color:#8b949e">Unprogrammed</div>
+      </div>
+      <div class="board-sec">
+        <div class="sec-title"><span>Board System Clock (CLK100MHZ — Pin E3)</span><div class="clk-status"><div id="clkLed" class="clk-led"></div><span id="clkStatusText" style="color:var(--mu)">Clock Idle</span></div></div>
+        <div class="clk-panel">
+          <div style="display:flex;gap:6px;align-items:center">
+            <button id="clkToggleBtn" class="bt" onclick="toggleClockRunner()">▶ Run Clock</button>
+            <button class="bt step-btn" onclick="stepClockManual()">⚡ Step 1 Cycle</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+            <span style="color:var(--mu)">Speed:</span>
+            <select id="clkFreqSelect" class="preset-select" onchange="updateClockFreq()">
+              <option value="1">1 Hz</option><option value="5">5 Hz</option>
+              <option value="25" selected>25 Hz</option><option value="100">100 Hz</option>
+              <option value="1000">1 kHz</option><option value="50000">Fast (50 kHz)</option>
+              <option value="5000000">Turbo (Max Speed)</option>
+            </select>
+            <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--mu);cursor:pointer;margin-left:4px" title="Auto-scales hardware clock divider constants for instant interactive visual response">
+              <input type="checkbox" id="fastDivCheck" checked onchange="toggleFastDiv(this.checked)">
+              <span style="color:#58a6ff">⚡ Fast Divider</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="board-sec">
+        <div class="sec-title"><span>8-Digit 7-Segment Displays</span>
+          <div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--mu)">Polarity:</span>
+            <select id="pol" class="preset-select" style="padding:2px 6px;font-size:11px" onchange="renderBoardState()">
+              <option value="auto">Auto-detect</option><option value="low">Active-low</option><option value="high">Active-high</option>
+            </select></div>
+        </div>
+        <div class="dg-container" id="dgs"></div>
+      </div>
+      <div class="board-sec">
+        <div class="sec-title"><span>LEDs (LED[15:0])</span>
+          <div class="rgb-wrap"><div class="rgb-unit"><span>LD16:</span><div id="ld16" class="rgb-led"></div></div><div class="rgb-unit"><span>LD17:</span><div id="ld17" class="rgb-led"></div></div></div>
+        </div>
+        <div class="led-bar" id="leds"></div>
+      </div>
+      <div class="board-sec">
+        <div class="sec-title"><span>Slide Switches (SW[15:0])</span><button class="bt" style="padding:2px 6px;font-size:10px" onclick="resetAllSwitches()">All OFF</button></div>
+        <div class="sw-bar" id="sws"></div>
+      </div>
+      <div class="board-sec">
+        <div class="sec-title"><span>Pushbuttons & CPU_RESETN</span></div>
+        <div style="display:flex;justify-content:space-around;align-items:center;flex-wrap:wrap;gap:12px">
+          <div><div style="text-align:center;font-size:10px;color:var(--mu);margin-bottom:4px">DIRECTIONAL BUTTONS</div>
+            <div class="btn-cluster">
+              <div></div><button class="btn-hw" id="btn_BTNU">BTNU</button><div></div>
+              <button class="btn-hw" id="btn_BTNL">BTNL</button><button class="btn-hw" id="btn_BTNC">BTNC</button><button class="btn-hw" id="btn_BTNR">BTNR</button>
+              <div></div><button class="btn-hw" id="btn_BTND">BTND</button><div></div>
+            </div>
+          </div>
+          <div style="text-align:center"><div style="font-size:10px;color:var(--mu);margin-bottom:6px">ACTIVE-LOW RESET (Pin C12)</div>
+            <button class="btn-hw btn-reset" id="btn_RESETN" style="width:100px;height:42px;margin:0 auto">CPU_RESETN</button>
+            <div style="font-size:9.5px;color:var(--mu);margin-top:6px">Press = 0, Release = 1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div><!-- /#nexysBoardWrap -->
+
+    <!-- DEVELOPER BRANDING RECTANGULAR CARD (BELOW THE BOARD) -->
+    <div id="boardBrandingBox" class="dev-board-box">
+      <div class="dev-box-left">
+        <div class="dev-box-chip">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y2="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
+          </svg>
+        </div>
+        <div class="dev-box-details">
+          <div class="dev-box-eyebrow">DESIGN &amp; DEVELOPED BY</div>
+          <div class="dev-box-author">NAV VARDHAN SINGH</div>
+          <div class="dev-box-tagline">Nexys 4 DDR Web Simulator • Artix-7 FPGA Architecture</div>
+        </div>
+      </div>
+      <div class="dev-box-links">
+        <a href="https://github.com/THE-NAVVV" target="_blank" rel="noopener noreferrer" class="dev-box-btn dev-gh-btn" title="View GitHub Profile (@THE-NAVVV)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub Profile</span>
+        </a>
+        <a href="https://www.linkedin.com/in/nav-vardhan-singh-ranawat-923255364/" target="_blank" rel="noopener noreferrer" class="dev-box-btn dev-li-btn" title="Connect on LinkedIn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+          </svg>
+          <span>LinkedIn Profile</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ================================================================
+   Nexys 4 DDR Web Simulator — Production-Grade Verilog Engine
+   Supports: Multi-module, Sub-module instantiation, Sequential +
+   Combinational logic, Non-blocking (<=), @(posedge/negedge),
+   Reduction operators (&, |, ^, ~^, ~&, ~|), Binary XNOR (^~, ~^),
+   Proportional divider auto-scaling (Constant-only, non-XSIM),
+   always #(N) clock generators, $display/$monitor/$finish,
+   Testbench simulation, XDC constraints, Board I/O mapping
+   ================================================================ */
+const $=id=>document.getElementById(id), M=w=>w>=32?0xFFFFFFFF:(Math.pow(2,w)-1)>>>0, u=x=>(x>>>0), sl=ms=>new Promise(r=>setTimeout(r,ms));
+const FIN=Symbol('FIN');
+const log=(msg,cls='i')=>{const d=document.createElement('div');d.className=cls;d.textContent=msg;const l=$('log');if(l){l.appendChild(d);l.scrollTop=l.scrollHeight}};
+
+/* ====================== SAFE STORAGE WRAPPER ================= */
+const safeStorage={
+  get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+/* ====================== PIN MAPPING ========================= */
+const SW_P='J15 L16 M13 R15 R17 T18 U18 R13 T8 U8 R16 T13 H6 U12 U11 V10';
+const LED_P='H17 K15 J13 N14 R18 V17 U17 U16 V16 T15 U14 T16 V15 V14 V12 V11';
+const SEG_P='T10 R10 K16 K13 P15 T11 L18 H15';
+const AN_P='J17 J18 T9 J14 P14 T14 K2 U13';
+const BTN_P='N17 M18 P17 M17 P18';
+const PIN={E3:{r:'clk',i:0},C12:{r:'resetn',i:0},N15:{r:'rgb',i:16,c:'r'},M16:{r:'rgb',i:16,c:'g'},R12:{r:'rgb',i:16,c:'b'},G14:{r:'rgb',i:17,c:'r'},R11:{r:'rgb',i:17,c:'g'},K6:{r:'rgb',i:17,c:'b'}};
+[['sw',SW_P],['led',LED_P],['btn',BTN_P],['seg',SEG_P],['an',AN_P]].forEach(([r,s])=>s.split(' ').forEach((p,i)=>PIN[p]={r,i}));
+const genXdc=(n,pl)=>pl.split(' ').map((p,i)=>`set_property -dict { PACKAGE_PIN ${p} IOSTANDARD LVCMOS33 } [get_ports { ${n}[${i}] }]`).join('\n');
+
+/* ====================== PRESETS ============================= */
+const PRESETS={
+traffic:{title:"Traffic Light Controller FSM (Moore)",
+v:`module traffic_light #(
+    parameter CLK_FREQ = 100000000,
+    parameter RED_TIME = 5,
+    parameter GREEN_TIME = 5,
+    parameter YELLOW_TIME = 2
+)(
+    input clk,
+    input reset_n,
+    output reg red,
+    output reg yellow,
+    output reg green
+);
+    localparam S_RED = 2'd0;
+    localparam S_GREEN = 2'd1;
+    localparam S_YELLOW = 2'd2;
+
+    reg [1:0] state;
+    reg [31:0] counter;
+
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            state <= S_RED;
+            counter <= 0;
+        end else begin
+            if (state == S_RED && counter >= (CLK_FREQ * RED_TIME - 1)) begin
+                state <= S_GREEN;
+                counter <= 0;
+            end else if (state == S_GREEN && counter >= (CLK_FREQ * GREEN_TIME - 1)) begin
+                state <= S_YELLOW;
+                counter <= 0;
+            end else if (state == S_YELLOW && counter >= (CLK_FREQ * YELLOW_TIME - 1)) begin
+                state <= S_RED;
+                counter <= 0;
+            end else begin
+                counter <= counter + 1;
+            end
+        end
+    end
+
+    always @(*) begin
+        red = 0; yellow = 0; green = 0;
+        case (state)
+            S_RED: red = 1;
+            S_GREEN: green = 1;
+            S_YELLOW: yellow = 1;
+        endcase
+    end
+endmodule`,
+tb:`module tb;
+  reg clk, reset_n;
+  wire red, yellow, green;
+  traffic_light #(.CLK_FREQ(10),.RED_TIME(5),.GREEN_TIME(5),.YELLOW_TIME(2)) uut(
+    .clk(clk),.reset_n(reset_n),.red(red),.yellow(yellow),.green(green));
+  always #5 clk = ~clk;
+  initial begin
+    clk = 0; reset_n = 0;
+    #12; reset_n = 1;
+    repeat(26) begin #50; $display("R=%b Y=%b G=%b", red, yellow, green); end
+    $finish;
+  end
+endmodule`,
+xdc:`set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]
+set_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]
+set_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { red }]
+set_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { yellow }]
+set_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { green }]`
+},
+
+counter:{title:"16-Bit Counter + 7-Seg",
+v:`module top(
+  input clk,
+  input [15:0] sw,
+  input btnc,
+  output reg [15:0] led,
+  output reg [6:0] seg,
+  output [7:0] an
+);
+  assign an = 8'b11111110;
+  always @(posedge clk or posedge btnc) begin
+    if (btnc) led <= 16'b0;
+    else if (sw[0]) led <= led + 1'b1;
+  end
+  always @(*) begin
+    case (led[3:0])
+      4'h0: seg = 7'b1000000; 4'h1: seg = 7'b1111001;
+      4'h2: seg = 7'b0100100; 4'h3: seg = 7'b0110000;
+      4'h4: seg = 7'b0011001; 4'h5: seg = 7'b0010010;
+      4'h6: seg = 7'b0000010; 4'h7: seg = 7'b1111000;
+      4'h8: seg = 7'b0000000; 4'h9: seg = 7'b0010000;
+      4'hA: seg = 7'b0001000; 4'hB: seg = 7'b0000011;
+      4'hC: seg = 7'b1000110; 4'hD: seg = 7'b0100001;
+      4'hE: seg = 7'b0000110; 4'hF: seg = 7'b0001110;
+      default: seg = 7'b1111111;
+    endcase
+  end
+endmodule`,
+tb:`module tb;
+  reg clk; reg [15:0] sw; reg btnc;
+  wire [15:0] led; wire [6:0] seg; wire [7:0] an;
+  top uut(.clk(clk),.sw(sw),.btnc(btnc),.led(led),.seg(seg),.an(an));
+  always #5 clk = ~clk;
+  initial begin
+    clk=0; btnc=1; sw=16'h0001;
+    #12; btnc=0;
+    #100;
+    $display("After counting: led=%d seg=%b", led, seg);
+    $finish;
+  end
+endmodule`,
+xdc:`set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]
+${genXdc('sw',SW_P)}
+${genXdc('led',LED_P)}
+${genXdc('seg',SEG_P.split(' ').slice(0,7).join(' '))}
+${genXdc('an',AN_P)}
+set_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]`
+},
+
+johnson:{title:"Johnson Counter (Multi-Module)",
+v:`module flip_flop(
+  input wire clk, input wire rst,
+  input wire en, input wire d,
+  output reg q
+);
+  always @(posedge clk or posedge rst) begin
+    if (rst) q <= 1'b0;
+    else if (en) q <= d;
+  end
+endmodule
+
+module johnson_counter(
+  input wire clk, input wire rst,
+  output wire [3:0] q
+);
+  reg [25:0] count;
+  wire en;
+  always @(posedge clk or posedge rst) begin
+    if (rst) count <= 26'd0;
+    else if (count == 26'd49_999_999) count <= 26'd0;
+    else count <= count + 1'b1;
+  end
+  assign en = (count == 26'd49_999_999 || count == 26'd3);
+  wire [3:0] d;
+  assign d[0] = ~q[3];
+  assign d[1] = q[0];
+  assign d[2] = q[1];
+  assign d[3] = q[2];
+  flip_flop FF0(.clk(clk),.rst(rst),.en(en),.d(d[0]),.q(q[0]));
+  flip_flop FF1(.clk(clk),.rst(rst),.en(en),.d(d[1]),.q(q[1]));
+  flip_flop FF2(.clk(clk),.rst(rst),.en(en),.d(d[2]),.q(q[2]));
+  flip_flop FF3(.clk(clk),.rst(rst),.en(en),.d(d[3]),.q(q[3]));
+endmodule`,
+tb:`module tb;
+  reg clk, rst; wire [3:0] q;
+  johnson_counter uut(.clk(clk),.rst(rst),.q(q));
+  always #5 clk = ~clk;
+  initial begin
+    clk=0; rst=1; #12; rst=0;
+    repeat(10) @(posedge clk);
+    $display("After 10 clocks: q=%b", q);
+    $finish;
+  end
+endmodule`,
+xdc:`set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports {clk}]
+set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports {rst}]
+set_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports {q[0]}]
+set_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports {q[1]}]
+set_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports {q[2]}]
+set_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports {q[3]}]`
+},
+
+hex7seg:{title:"Hex → 7-Segment Decoder",
+v:`module top(
+  input [3:0] A,
+  output reg [6:0] Y,
+  output [7:0] an
+);
+  assign an = 8'b11111110;
+  always @(*) begin
+    case (A)
+      4'h0: Y = 7'b1000000; 4'h1: Y = 7'b1111001;
+      4'h2: Y = 7'b0100100; 4'h3: Y = 7'b0110000;
+      4'h4: Y = 7'b0011001; 4'h5: Y = 7'b0010010;
+      4'h6: Y = 7'b0000010; 4'h7: Y = 7'b1111000;
+      4'h8: Y = 7'b0000000; 4'h9: Y = 7'b0010000;
+      4'hA: Y = 7'b0001000; 4'hB: Y = 7'b0000011;
+      4'hC: Y = 7'b1000110; 4'hD: Y = 7'b0100001;
+      4'hE: Y = 7'b0000110; 4'hF: Y = 7'b0001110;
+      default: Y = 7'b1111111;
+    endcase
+  end
+endmodule`,
+tb:`module tb;
+  reg [3:0] A; wire [6:0] Y; wire [7:0] an;
+  integer i;
+  top uut(.A(A),.Y(Y),.an(an));
+  initial begin
+    A=0;
+    for(i=0;i<16;i=i+1) begin
+      A=i; #10;
+      $display("A=%h -> Y=%b", A, Y);
+    end
+    $finish;
+  end
+endmodule`,
+xdc:`${genXdc('A',SW_P.split(' ').slice(0,4).join(' '))}
+${genXdc('Y',SEG_P.split(' ').slice(0,7).join(' '))}
+${genXdc('an',AN_P)}`
+},
+
+alu:{title:"4-Bit ALU",
+v:`module top(
+  input [3:0] a,
+  input [3:0] b,
+  input [2:0] op,
+  output reg [7:0] led,
+  output cout
+);
+  reg c;
+  assign cout = c;
+  always @(*) begin
+    c = 1'b0;
+    led = 8'b0;
+    case (op)
+      3'b000: {c, led[3:0]} = a + b;
+      3'b001: {c, led[3:0]} = a - b;
+      3'b010: led = {4'b0, a & b};
+      3'b011: led = {4'b0, a | b};
+      3'b100: led = {4'b0, a ^ b};
+      3'b101: led = {4'b0, ~a};
+      3'b110: led = a << 1;
+      3'b111: led = a >> 1;
+      default: led = 8'b0;
+    endcase
+  end
+endmodule`,
+tb:`module tb;
+  reg [3:0] a, b; reg [2:0] op;
+  wire [7:0] led; wire cout;
+  top uut(.a(a),.b(b),.op(op),.led(led),.cout(cout));
+  initial begin
+    a=4'd5; b=4'd3;
+    op=3'b000; #10; $display("ADD: %d+%d=%d c=%b",a,b,led,cout);
+    op=3'b001; #10; $display("SUB: %d-%d=%d c=%b",a,b,led,cout);
+    op=3'b100; #10; $display("XOR: %b^%b=%b",a,b,led);
+    op=3'b110; a=4'd8; #10; $display("SHL: %b<<1=%b",a,led);
+    $finish;
+  end
+endmodule`,
+xdc:`${genXdc('a',SW_P.split(' ').slice(0,4).join(' '))}
+${genXdc('b',SW_P.split(' ').slice(4,8).join(' '))}
+${genXdc('op',SW_P.split(' ').slice(8,11).join(' '))}
+${genXdc('led',LED_P.split(' ').slice(0,8).join(' '))}
+set_property -dict { PACKAGE_PIN V16 IOSTANDARD LVCMOS33 } [get_ports { cout }]`
+},
+
+shiftreg:{title:"16-Bit Shift Register",
+v:`module top(
+  input clk, input btnc,
+  input [1:0] sw,
+  output reg [15:0] led
+);
+  always @(posedge clk or posedge btnc) begin
+    if (btnc) led <= 16'h0001;
+    else if (sw[1]) led <= {led[14:0], sw[0]};
+    else led <= {sw[0], led[15:1]};
+  end
+endmodule`,
+tb:`module tb;
+  reg clk,btnc; reg [1:0] sw; wire [15:0] led;
+  top uut(.clk(clk),.btnc(btnc),.sw(sw),.led(led));
+  always #5 clk=~clk;
+  initial begin
+    clk=0;btnc=1;sw=2'b10;
+    #12;btnc=0;
+    repeat(20) @(posedge clk);
+    $display("led=%b",led);
+    $finish;
+  end
+endmodule`,
+xdc:`set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]
+${genXdc('sw',SW_P.split(' ').slice(0,2).join(' '))}
+${genXdc('led',LED_P)}
+set_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]`
+}
+};
+
+/* ====================== TAB/STORAGE ========================= */
+function setTab(n){
+  [0,1,2].forEach(i=>{
+    $('t'+i).hidden=i!==n;
+    $('tabBtn'+i).className=i===n?'on':'';
+  });
+  const bSim=$('bSim');
+  if(bSim) bSim.style.display=(n===1)?'inline-flex':'none';
+}
+
+function loadPreset(key){
+  const p=PRESETS[key]||PRESETS.traffic;
+  $('t0').value=p.v;$('t1').value=p.tb;$('t2').value=p.xdc;
+  safeStorage.set('nx4_preset', key);
+  if($('pol')) $('pol').value = 'low';
+  lock();
+  log('Loaded preset: '+p.title,'i');
+}
+function restoreDefaultPreset(){loadPreset($('presetSelect').value)}
+
+function toggleFastDiv(val){
+  FAST_DIV=!!val;
+  if(D||isProgrammed){
+    log('[DIV] Fast Divider setting changed. Please re-run Synthesis -> Implementation -> Bitstream to apply.','w');
+  }
+}
+
+function registerPreset(key,preset){
+  PRESETS[key]=preset;
+  const sel=$('presetSelect');
+  if(sel&&!sel.querySelector('option[value="'+key+'"]')){
+    const opt=document.createElement('option');
+    opt.value=key;
+    opt.textContent=preset.title||key;
+    sel.appendChild(opt);
+  }
+  const saved=safeStorage.get('nx4_preset');
+  if(saved&&PRESETS[saved]&&sel){
+    sel.value=saved;
+  }
+}
+
+// Initialize preset dropdown from safeStorage
+const savedPresetKey = safeStorage.get('nx4_preset') || 'traffic';
+if($('presetSelect') && PRESETS[savedPresetKey]) $('presetSelect').value = savedPresetKey;
+
+['t0','t1','t2'].forEach(id=>{
+  const e=$(id);
+  const s=safeStorage.get('nx4_'+id);
+  if(s)e.value=s;
+  else e.value=(PRESETS[savedPresetKey]||PRESETS.traffic)[id==='t0'?'v':id==='t1'?'tb':'xdc'];
+  e.addEventListener('input',()=>{
+    safeStorage.set('nx4_'+id,e.value);
+    lock();
+  });
+  e.addEventListener('keydown',k=>{
+    if(k.key==='Tab'){
+      k.preventDefault();
+      e.setRangeText('  ',e.selectionStart,e.selectionEnd,'end');
+      e.dispatchEvent(new Event('input'));
+    }
+  });
+});
+
+/* ==================================================================
+   VERILOG PARSER & ENGINE
+   Supports: Multi-module, Unary reduction (&, |, ^, ~^, ~&, ~|),
+   Binary XNOR (^~, ~^), Proportional divider auto-scaling
+   (Constant-only, non-XSIM), Multi-bit shifts (<<, >>, >>>),
+   @(posedge/negedge), non-blocking <=, always #(delay)
+   ================================================================== */
+let T=[],P=0,E={},nbQ=[],nbMode=false,SM=null,FAST_DIV=true;
+
+// Lexer supporting floats (\d+\.\d+), numbers, identifiers, multi-char operators
+const lex=s=>s.replace(/\/\/.*|\/\*[\s\S]*?\*\//g,'')
+  .replace(/`[^\n]*$/gm,'')
+  .match(/"[^"]*"|\d*'[sS]?[bBhHdDoO][0-9a-fA-F_xXzZ?]+|\d+\.\d+|\d+|[A-Za-z_$][\w$]*|===|!==|<=|>=|==|!=|&&|\|\||<<<|>>>|<<|>>|~&|~\||~\^|\^~|[^\s]/g)||[];
+
+const pk=()=>T[P],nx=()=>{if(P>=T.length)throw Error('Unexpected end of file (missing endmodule or ;?)');return T[P++]},ac=x=>T[P]===x?(P++,1):0;
+const ex=x=>{const g=nx();if(g!==x)throw Error("Expected '"+x+"' but found '"+g+"'")};
+// Operator precedence with bitwise XOR and binary XNOR (~^, ^~) at precedence 4
+const OPR={'||':1,'&&':2,'|':3,'^':4,'~^':4,'^~':4,'&':5,'==':6,'!=':6,'===':6,'!==':6,'<':7,'>':7,'<=':7,'>=':7,'<<':8,'>>':8,'>>>':8,'+':9,'-':9,'*':10,'/':10,'%':10};
+
+function num(x){if(!x.includes("'"))return{k:'n',v:u(+x||0),w:32};const[w,r]=x.split("'"),q=r.replace(/^[sS]/,''),b=q[0].toLowerCase(),raw=q.slice(1).replace(/_/g,'').replace(/[xXzZ?]/g,'0');return{k:'n',v:u(parseInt(raw,{b:2,h:16,d:10,o:8}[b]||10)||0),w:+w||32}}
+function expr(){const c=bin(1);if(ac('?')){const a=expr();ex(':');return{k:'?',c,a,b:expr()}}return c}
+function bin(m){let l=un();while(OPR[pk()]>=m){const o=nx();l={k:'b',o,l,r:bin(OPR[o]+1)}}return l}
+
+// Unary prefix and reduction operators
+function un(){
+  const op=pk();
+  if(op && ('~!-+&|^'.includes(op) || op==='~&' || op==='~|' || op==='~^' || op==='^~')){
+    const o=nx();
+    return {k:'u',o,e:un()};
+  }
+  return prim();
+}
+
+function prim(){
+  const x=nx();
+  if(x==='('){const e=expr();ex(')');return e}
+  if(x==='{'){const a=[expr()];if(pk()==='{'){nx();const e=expr();ex('}');ex('}');return{k:'rep',n:a[0],e}}while(ac(','))a.push(expr());ex('}');return{k:'c',a}}
+  if(x[0]==='"')return{k:'s',v:x.slice(1,-1)};
+  if(x==='$time'||x==='$realtime')return{k:'t'};
+  if(/^\d/.test(x)||x[0]==="'")return num(x);
+  if(/^[A-Za-z_$]/.test(x)){const n={k:'i',n:x};if(ac('[')){const a=expr();if(ac(':')){n.hi=a;n.lo=expr()}else n.hi=n.lo=a;ex(']')}return n}
+  throw Error('Unexpected token: '+x);
+}
+
+// Proportional hardware divider constant scaler for interactive visual simulation
+function scaleDividerConst(v){
+  if(!FAST_DIV || v < 100000) return v;
+  const isMinusOne = (v % 10 === 9);
+  if(v >= 10000000){
+    const base = isMinusOne ? v + 1 : v;
+    const scaled = Math.max(3, Math.round(base / 10000000));
+    return isMinusOne ? scaled - 1 : scaled;
+  }
+  const base = isMinusOne ? v + 1 : v;
+  const scaled = Math.max(3, Math.round(base / 100000));
+  return isMinusOne ? scaled - 1 : scaled;
+}
+
+// Constant-node detector (literals, parameters/localparams, constant expressions)
+const isK=n=>n&&(n.k==='n'||(n.k==='i'&&!n.hi&&E[n.n]&&E[n.n].d==='const')||(n.k==='b'&&isK(n.l)&&isK(n.r)));
+
+function ev(n){
+  if(!n)return[0,1];
+  switch(n.k){
+    case'n':return[n.v,n.w];
+    case's':return[0,0];
+    case't':return[SM?SM.T:0,32];
+    case'i':{
+      const s=E[n.n];
+      if(!s)throw Error('Undeclared signal: '+n.n);
+      if(n.hi){const h=ev(n.hi)[0],l=ev(n.lo)[0],w=Math.max(1,h-l+1);return[u((s.v>>>l)&M(w)),w]}
+      return[s.v,s.w];
+    }
+    case'u':{
+      const[v,w]=ev(n.e);
+      if(n.o==='~')return[u(~v&M(w)),w];
+      if(n.o==='!')return[+!v,1];
+      if(n.o==='+')return[v,w];
+      if(n.o==='-')return[u(-v&M(w)),w];
+      // Verilog reduction operators
+      if(n.o==='&')return[+(v===M(w)),1];
+      if(n.o==='~&')return[+(v!==M(w)),1];
+      if(n.o==='|')return[+!!v,1];
+      if(n.o==='~|')return[+!v,1];
+      if(n.o==='^'){let c=0;for(let i=0;i<w;i++)c+=(v>>>i)&1;return[c&1,1]}
+      if(n.o==='~^'||n.o==='^~'){let c=0;for(let i=0;i<w;i++)c+=(v>>>i)&1;return[(c&1)^1,1]}
+      return[v,w];
+    }
+    case'?':{const[c]=ev(n.c),[a,x]=ev(n.a),[b,y]=ev(n.b);return[c?a:b,Math.max(x,y)]}
+    case'c':{let rv=0,rw=0;for(const e of n.a){const[v,w]=ev(e);rv=u((rv<<w)|(v&M(w)));rw+=w}return[rv,rw]}
+    case'rep':{const k=ev(n.n)[0],[v,w]=ev(n.e);let r=0;for(let i=0;i<k;i++)r=u((r<<w)|(v&M(w)));return[r,k*w]}
+    case'b':{
+      const[a,x]=ev(n.l),[b,y]=ev(n.r);let o=n.o;if(o==='===')o='==';if(o==='!==')o='!=';const w=Math.max(x,y);
+
+      // Only scale the constant side of a comparison when other side is variable, and never in XSIM testbench
+      let A=a,B=b;
+      if(FAST_DIV&&!SM&&['==','!=','<','>','<=','>='].includes(o)){
+        const kl=isK(n.l),kr=isK(n.r);
+        if(kr&&!kl)B=scaleDividerConst(b);
+        else if(kl&&!kr)A=scaleDividerConst(a);
+      }
+
+      switch(o){
+        case'+':return[u(a+b),Math.max(w,32)];
+        case'-':return[u(a-b),Math.max(w,32)];
+        case'*':return[u(Math.imul(a,b)),Math.max(w,32)];
+        case'/':return[b?u(Math.floor(a/b)):0,w];
+        case'%':return[b?u(a%b):0,w];
+        // Shift operators without premature truncation (LHS assignment masks to destination width)
+        case'<<':return[u(b>=32?0:(a<<b)),Math.max(x+b,32)];
+        case'>>':return[u(b>=32?0:(a>>>b)),x];
+        case'>>>':{
+          if(b>=32)return[(a>>>(x-1))&1?M(x):0,x];
+          let r=a>>>b;
+          if((a>>>(x-1))&1){const mask=u((M(b)<<(x-b))&M(x));r=u(r|mask)}
+          return[r,x];
+        }
+        case'==':return[+(A===B),1];
+        case'!=':return[+(A!==B),1];
+        case'<':return[+(A<B),1];
+        case'>':return[+(A>B),1];
+        case'<=':return[+(A<=B),1];
+        case'>=':return[+(A>=B),1];
+        case'&&':return[+(!!a&&!!b),1];
+        case'||':return[+(!!a||!!b),1];
+        case'^':return[u(a^b),w];
+        case'~^':case'^~':return[u(~(a^b)&M(w)),w];
+        default:{
+          let r=0;
+          if(o==='&')r=u(a&b);
+          else if(o==='|')r=u(a|b);
+          return[r&M(w),w];
+        }
+      }
+    }
+  }
+}
+
+function commitSetv(lv,val){
+  if(lv.k==='c'){const items=lv.a.map(it=>{const w=it.hi?(ev(it.hi)[0]-ev(it.lo)[0]+1):(E[it.n]?E[it.n].w:1);return{it,w}});const tw=items.reduce((a,x)=>a+x.w,0);let sh=tw;for(const x of items){sh-=x.w;commitSetv(x.it,(val>>>sh)&M(x.w))}return}
+  const s=E[lv.n];if(!s)throw Error('Undeclared signal: '+lv.n);
+  if(lv.hi){const h=ev(lv.hi)[0],l=ev(lv.lo)[0],w=Math.max(1,h-l+1),k=u(M(w)<<l);s.v=u((s.v&~k)|((val&M(w))<<l))}
+  else s.v=u(val&M(s.w))}
+function setv(lv,val,nb){if(nb&&nbMode){nbQ.push({lv,val,ctx:E});return}commitSetv(lv,val)}
+
+function asg(){const lv=prim();if(ac('+')){ex('+');return{k:'as',lv,e:{k:'b',o:'+',l:lv,r:{k:'n',v:1,w:32}},nb:false}}
+  const o=nx();if(o!=='='&&o!=='<=')throw Error("Expected '=' or '<=' but found '"+o+"'");return{k:'as',lv,e:expr(),nb:o==='<='}}
+
+function st(){const x=pk();
+  if(ac('begin')){if(ac(':'))nx();const a=[];while(!ac('end'))a.push(st());return{k:'blk',a}}
+  if(ac(';'))return{k:'blk',a:[]};
+  if(ac('if')){ex('(');const c=expr();ex(')');const a=st();return{k:'if',c,a,b:ac('else')?st():null}}
+  if(x==='for'){nx();ex('(');const i=asg();ex(';');const c=expr();ex(';');const s=asg();ex(')');return{k:'for',i,c,s,b:st()}}
+  if(x==='repeat'){nx();ex('(');const n=expr();ex(')');return{k:'rp',n,b:st()}}
+  if(x==='forever'){nx();return{k:'forever',b:st()}}
+  if(x==='while'){nx();ex('(');const c=expr();ex(')');return{k:'while',c,b:st()}}
+  if(x==='@'){nx();ex('(');const evts=[];while(pk()!==')'){let edge='any';if(pk()==='posedge'||pk()==='negedge'){edge=nx()}else if(pk()==='*'){nx();if(pk()==='or'||pk()===',')nx();continue}const sig=nx();let bit=undefined;if(ac('[')){bit=ev(expr())[0];ex(']')}evts.push({edge,sig,bit});if(pk()==='or'||pk()===',')nx()}ex(')');const s2=ac(';')?null:(pk()&&pk()!=='end'&&pk()!=='endmodule'?st():null);return{k:'wait',events:evts,s:s2}}
+  // Supports #10, #10.5, #(CLK/2)
+  if(ac('#')){
+    let n=1;
+    if(ac('(')){n=ev(expr())[0];ex(')')}
+    else{n=parseFloat(nx())||1}
+    return{k:'dl',n:Math.max(1,Math.round(n)),s:ac(';')?null:st()};
+  }
+  if(x&&x[0]==='$'){nx();const a=[];if(ac('(')&&!ac(')')){do a.push(expr());while(ac(','));ex(')')}ex(';');return{k:'sys',f:x,a}}
+  if(x==='case'||x==='casez'||x==='casex'){nx();ex('(');const e=expr();ex(')');const cs=[];let d=null;while(!ac('endcase')){if(ac('default')){ac(':');d=st()}else{const l=[expr()];while(ac(','))l.push(expr());ex(':');cs.push({l,s:st()})}}return{k:'cs',e,cs,d}}
+  const a=asg();ex(';');return a}
+
+function run(s){if(!s)return;switch(s.k){
+  case'blk':s.a.forEach(run);break;
+  case'if':ev(s.c)[0]?run(s.a):(s.b&&run(s.b));break;
+  case'cs':{const v=ev(s.e)[0];const c=s.cs.find(c=>c.l.some(l=>ev(l)[0]===v));c?run(c.s):(s.d&&run(s.d));break}
+  case'as':setv(s.lv,ev(s.e)[0],s.nb);break;
+  case'for':{run(s.i);let n=0;while(ev(s.c)[0]){run(s.b);run(s.s);if(++n>100000)throw Error('Loop limit exceeded')}break}
+  case'rp':{let n=ev(s.n)[0];if(n>500000){if(SM)SM.log('repeat('+n+') capped at 500000','w');n=500000}for(let i=0;i<n;i++){if(SM&&(SM.finished||SM.T>SM.maxTime))break;run(s.b)}break}
+  case'while':{let n=0;while(ev(s.c)[0]){run(s.b);if(++n>100000)throw Error('While loop limit')}break}
+  case'forever':{let n=0;while(true){run(s.b);if(++n>500000)throw Error('Forever loop limit');if(SM&&(SM.finished||SM.T>SM.maxTime))break}break}
+  case'dl':if(SM){SM.T+=s.n;if(SM.onDelay)SM.onDelay(s.n)}if(s.s)run(s.s);break;
+  case'wait':if(SM&&SM.onWait)SM.onWait(s.events);if(s.s)run(s.s);break;
+  case'sys':if(SM&&SM.sysCall)SM.sysCall(s);break}}
+
+/* ====================== MODULE PARSER ========================= */
+const KW=['input','output','inout','wire','reg','integer'];
+let curDir={d:'',w:1,isWire:false},curCOMB=null;
+
+function item(inBody=false){
+  while(KW.includes(pk())){
+    const x=nx();
+    if(x==='integer')curDir={d:'',w:32,isWire:false};
+    else if(x==='wire')curDir={...curDir,isWire:true};
+    else if(x==='reg')curDir={...curDir,isWire:false};
+    else curDir={d:x,w:1,isWire:false};
+  }
+  ac('signed');
+  if(ac('[')){const h=ev(expr())[0];ex(':');const l=ev(expr())[0];ex(']');curDir.w=Math.abs(h-l)+1}
+  const n=nx();
+  const s=E[n]||(E[n]={w:1,v:0,d:''});
+  if(curDir.w>1||!s.w)s.w=curDir.w;
+  if(curDir.d)s.d=curDir.d;
+  if(ac('=')){
+    const e=expr();
+    if(inBody&&(curDir.isWire||!curDir.d)&&curCOMB){curCOMB.push({k:'as',lv:{k:'i',n},e,nb:false})}
+    else{s.v=u(ev(e)[0]&M(s.w))}
+  }
+}
+
+function parseOneModule(){
+  const savedE=E;E={};curDir={d:'',w:1,isWire:false};
+  const COMB=[],SEQ=[],INI=[],INS=[],modParams={};curCOMB=COMB;
+  ex('module');const modName=nx();
+  if(ac('#')){
+    ex('(');
+    while(pk()!==')'){
+      if(pk()==='parameter'||pk()==='localparam')nx();
+      ac('signed');
+      let pw=32;
+      if(ac('[')){const h=ev(expr())[0];ex(':');const l=ev(expr())[0];ex(']');pw=Math.abs(h-l)+1}
+      const n=nx();ex('=');const val=ev(expr())[0];
+      const item={w:pw,v:u(val&M(pw)),d:'const'};
+      E[n]=item;modParams[n]=item;
+      if(!ac(','))break}
+    ex(')')}
+  if(ac('(')&&!ac(')')){do item();while(ac(','));ex(')')}
+  ex(';');
+  while(!ac('endmodule')){const x=pk();
+    if(x==='assign'){nx();const lv=prim();ex('=');const e=expr();ex(';');COMB.push({k:'as',lv,e,nb:false})}
+    else if(x==='always'){nx();let isSeq=false;const triggers=[];
+      // Supports always #(CLK/2) and always #5 / #5.5
+      if(ac('#')){
+        let d=5;
+        if(ac('(')){d=ev(expr())[0];ex(')')}
+        else{d=parseFloat(nx())||5}
+        const b=st();
+        INI.push({k:'dl_loop',delay:Math.max(1,Math.round(d)),body:b});
+        continue;
+      }
+      if(ac('@')){if(ac('(')){if(ac('*')){ex(')')}else{while(pk()!==')'){let edge='any';if(pk()==='posedge'||pk()==='negedge'){isSeq=true;edge=nx()}else if(pk()==='*'){nx();if(pk()==='or'||pk()===',')nx();continue}const sig=nx();let bit=undefined;if(ac('[')){bit=ev(expr())[0];ex(']')}triggers.push({edge,sig,bit});if(pk()==='or'||pk()===',')nx()}ex(')')}}else if(ac('*')){}}
+      const b=st();if(isSeq)SEQ.push({triggers,body:b});else COMB.push(b)}
+    else if(x==='initial'){nx();INI.push(st())}
+    else if(KW.includes(x)){curDir={d:'',w:1,isWire:false};item(true);while(ac(','))item(true);ex(';')}
+    else if(x==='parameter'||x==='localparam'){
+      nx();ac('signed');
+      let pw=32;
+      if(ac('[')){const h=ev(expr())[0];ex(':');const l=ev(expr())[0];ex(']');pw=Math.abs(h-l)+1}
+      do{
+        const n=nx();ex('=');const val=ev(expr())[0];
+        E[n]={w:pw,v:u(val&M(pw)),d:'const'};
+        modParams[n]=E[n];
+      }while(ac(','));
+      ex(';')}
+    else if(x==='genvar'){nx();nx();ex(';')}
+    else if(x==='generate'){nx();}
+    else if(x==='endgenerate'){nx();}
+    else if(x==='function'){nx();while(pk()!=='endfunction')nx();nx();}
+    else if(x==='task'){nx();while(pk()!=='endtask')nx();nx();}
+    else if(/^[A-Za-z_]/.test(x)){
+      if(P+1<T.length&&(T[P+1]==='#'||(/^[A-Za-z_]/.test(T[P+1]||'')&&T[P+2]==='('))){
+        const instMod=nx();
+        const pOverrides=[];
+        if(ac('#')){
+          ex('(');
+          while(pk()!==')'){
+            if(ac('.')){const q=nx();ex('(');const s=ev(expr())[0];ex(')');pOverrides.push({p:q,v:s})}
+            else{const s=ev(expr())[0];pOverrides.push({p:null,v:s})}
+            ac(',')}
+          ex(')')}
+        const instName=nx();
+        ex('(');const c=[];
+        while(!ac(')')){if(ac('.')){const q=nx();ex('(');const s=pk()===')'?null:expr();ex(')');c.push({p:q,s})}else{c.push({p:null,s:expr()})}ac(',')}
+        ex(';');INS.push({instMod,instName,c,pOverrides})}
+      else throw Error('Unsupported construct: '+nx())}
+    else throw Error('Unsupported construct: '+nx())}
+  const mod={name:modName,E:{...E},COMB,SEQ,INI,INS,modParams,ports:Object.keys(E).filter(n=>/^(in|out)put$/.test(E[n].d))};
+  mod.E={};for(const[k,v]of Object.entries(E))mod.E[k]={w:v.w,v:v.v,d:v.d};
+  E=savedE;return mod}
+
+function parseSource(src){
+  T=lex(src);P=0;const modules={},order=[];
+  while(P<T.length){if(pk()==='module'){const m=parseOneModule();modules[m.name]=m;order.push(m.name)}else P++}
+  return{modules,order}}
+
+function findTopModule(modules,order){
+  const instantiated=new Set();
+  for(const m of Object.values(modules))for(const ins of(m.INS||[]))instantiated.add(ins.instMod);
+  const tops=order.filter(n=>!instantiated.has(n));
+  if(tops.length===0)return order[order.length-1];
+  if(tops.includes('top'))return'top';
+  return tops[tops.length-1]}
+
+/* ====================== ELABORATION ========================= */
+function elaborateModule(mod,registry,depth,overrides){
+  if((depth||0)>20)throw Error('Module instantiation depth limit exceeded (circular?)');
+  // Preserve inline register/wire initializations (v.v) instead of zeroing out
+  const eE={};for(const[k,v]of Object.entries(mod.E))eE[k]={w:v.w,v:v.v,d:v.d};
+  if(overrides&&mod.modParams){
+    const pNames=Object.keys(mod.modParams);
+    overrides.forEach((ov,idx)=>{
+      const target=ov.p||pNames[idx];
+      if(target&&eE[target]&&eE[target].d==='const')eE[target].v=u(ov.v&M(eE[target].w))})}
+  const instances=[];
+  for(const ins of(mod.INS||[])){
+    const subDef=registry[ins.instMod];
+    if(!subDef)throw Error("Module '"+ins.instMod+"' not found. Check module name spelling.");
+    const subUnit=elaborateModule(subDef,registry,(depth||0)+1,ins.pOverrides);
+    const conns=ins.c.map((c,idx)=>{
+      if(c.p!==null)return c;
+      return{p:subDef.ports[idx]||null,s:c.s}});
+    instances.push({name:ins.instName,unit:subUnit,conns:conns.filter(c=>c.p&&c.s),modPorts:subDef.E})}
+  return{E:eE,COMB:mod.COMB,SEQ:mod.SEQ,INI:mod.INI,instances,ports:mod.ports}}
+
+function exprRefs(expr,sigName){
+  if(!expr)return false;if(expr.k==='i')return expr.n===sigName;
+  for(const key of['l','r','e','c','a','b','n','hi','lo']){if(expr[key]){if(Array.isArray(expr[key])){if(expr[key].some(e=>exprRefs(e,sigName)))return true}else if(typeof expr[key]==='object'&&expr[key].k){if(exprRefs(expr[key],sigName))return true}}}return false}
+
+/* ====================== SIMULATION ENGINE =================== */
+function settle(unit){
+  const savedE=E;
+  for(let iter=0;iter<20;iter++){
+    let changed=false;const snap={};
+    E=unit.E;for(const k in E)snap[k]=E[k].v;
+    unit.COMB.forEach(run);
+    for(const inst of(unit.instances||[])){
+      E=unit.E;
+      for(const c of inst.conns){
+        const pd=inst.modPorts[c.p];
+        if(pd&&pd.d==='input'){try{const[v]=ev(c.s);inst.unit.E[c.p].v=u(v&M(inst.unit.E[c.p].w))}catch(e){}}}
+      settle(inst.unit);
+      E=unit.E;
+      for(const c of inst.conns){
+        const pd=inst.modPorts[c.p];
+        if(pd&&(pd.d==='output'||pd.d==='inout')){try{commitSetv(c.s,inst.unit.E[c.p].v)}catch(e){}}}}
+    E=unit.E;for(const k in E){if(snap[k]!==E[k].v)changed=true}
+    if(!changed)break}
+  E=savedE}
+
+function matchTrigger(tr,ev){
+  if(tr.sig!==ev.sig)return false;
+  if(tr.edge!=='any'&&tr.edge!==ev.edge)return false;
+  if(tr.bit!==undefined)return ev.bit===tr.bit||(ev.bit===undefined&&tr.bit===0);
+  return ev.bit===0||ev.bit===undefined;
+}
+function getAllUnits(root){
+  const list=[root];
+  function walk(u){for(const inst of(u.instances||[])){if(inst.unit){list.push(inst.unit);walk(inst.unit)}}}
+  walk(root);
+  return list;
+}
+function triggerSeq(unit,edgeEvents){
+  const savedE=E;
+  nbMode=true;nbQ=[];
+  function runSeqR(curUnit,events){
+    E=curUnit.E;
+    for(const b of(curUnit.SEQ||[])){if(b.triggers.some(tr=>events.some(ev=>matchTrigger(tr,ev))))run(b.body)}
+    for(const inst of(curUnit.instances||[])){
+      const ie=[];
+      for(const c of inst.conns){
+        const pd=inst.modPorts[c.p];
+        if(pd&&pd.d==='input'){
+          for(const ev of events){if(exprRefs(c.s,ev.sig))ie.push({sig:c.p,edge:ev.edge,bit:0})}
+        }
+      }
+      if(ie.length){
+        E=curUnit.E;for(const c of inst.conns){const pd=inst.modPorts[c.p];if(pd&&pd.d==='input'){try{const[v]=ev(c.s);inst.unit.E[c.p].v=u(v&M(inst.unit.E[c.p].w))}catch(e){}}}
+        runSeqR(inst.unit,ie)}}}
+
+  const allUnits=getAllUnits(unit);
+  function snapshotAll(){
+    for(const u of allUnits){u._snap={};for(const k in u.E)u._snap[k]=u.E[k].v;}
+  }
+
+  runSeqR(unit,edgeEvents);
+  snapshotAll();
+  nbMode=false;
+  for(const item of nbQ){const s2=E;E=item.ctx;commitSetv(item.lv,item.val);E=s2}
+  nbQ=[];
+  settle(unit);
+
+  for(let iter=0;iter<50;iter++){
+    nbMode=true;nbQ=[];
+    for(const curUnit of allUnits){
+      const curEvents=[];
+      for(const k in curUnit.E){
+        const oldVal=curUnit._snap[k]!==undefined?curUnit._snap[k]:curUnit.E[k].v;
+        const newVal=curUnit.E[k].v;
+        if(oldVal!==newVal){
+          for(let bit=0;bit<curUnit.E[k].w;bit++){
+            const ob=(oldVal>>bit)&1,nb=(newVal>>bit)&1;
+            if(ob!==nb){curEvents.push({sig:k,bit,edge:(ob===0&&nb===1)?'posedge':'negedge'})}
+          }
+        }
+      }
+      if(curEvents.length){
+        E=curUnit.E;
+        for(const b of(curUnit.SEQ||[])){
+          if(b.triggers.some(tr=>curEvents.some(ev=>matchTrigger(tr,ev))))run(b.body);
+        }
+      }
+      for(const inst of(curUnit.instances||[])){
+        const instEvents=[];
+        E=curUnit.E;
+        for(const c of inst.conns){
+          const pd=inst.modPorts[c.p];
+          if(pd&&pd.d==='input'){
+            let oldBit=0,newBit=0;
+            try{
+              const saved={};
+              for(const k in curUnit.E){saved[k]=curUnit.E[k].v;curUnit.E[k].v=curUnit._snap[k];}
+              oldBit=ev(c.s)[0]&1;
+              for(const k in curUnit.E)curUnit.E[k].v=saved[k];
+              newBit=ev(c.s)[0]&1;
+            }catch(e){}
+            if(oldBit!==newBit){
+              const edge=(oldBit===0&&newBit===1)?'posedge':'negedge';
+              instEvents.push({sig:c.p,edge,bit:0});
+              inst.unit.E[c.p].v=newBit;
+            }
+          }
+        }
+        if(instEvents.length){
+          E=inst.unit.E;
+          for(const b of(inst.unit.SEQ||[])){
+            if(b.triggers.some(tr=>instEvents.some(ev=>matchTrigger(tr,ev))))run(b.body);
+          }
+        }
+      }
+    }
+    if(nbQ.length>0){
+      snapshotAll();
+      nbMode=false;
+      for(const item of nbQ){const s2=E;E=item.ctx;commitSetv(item.lv,item.val);E=s2}
+      nbQ=[];
+      settle(unit);
+    }else{
+      break;
+    }
+  }
+  nbMode=false;nbQ=[];E=savedE;
+  settle(unit)}
+
+/* ====================== VIVADO FLOW ========================= */
+let D=null,D_mods=null,D_topName=null,pinMap=[],isProgrammed=false,hasAn=false,AUTO_POL='low';
+
+const lock=()=>{
+  $('b2').disabled=true;
+  $('b3').disabled=true;
+  if($('bDump'))$('bDump').disabled=true;
+  isProgrammed=false;
+  stopClockRunner();
+  const jLed=$('jtagLed'),jText=$('jtagText');
+  if(jLed){jLed.style.background='#30363d';jLed.style.boxShadow='none';jLed.style.borderColor='#484f58'}
+  if(jText){jText.textContent='JTAG Idle';jText.style.color='var(--mu)'}
+  renderBoardState();
+};
+
+async function flowSyn(){
+  $('log').innerHTML='';isProgrammed=false;stopClockRunner();renderBoardState();
+  try{
+    log('───────────────────────────────────────','i');
+    log('[Synth 8-638] Synthesizing design...','p');
+    await sl(100);
+    const src=$('t0').value;
+    const parsed=parseSource(src);
+    if(Object.keys(parsed.modules).length===0)throw Error('No Verilog modules found in source');
+    D_mods=parsed.modules;D_topName=findTopModule(parsed.modules,parsed.order);
+    const topMod=D_mods[D_topName];if(!topMod)throw Error('Top module not found');
+    if(!topMod.ports.length)throw Error("Module '"+D_topName+"' has no I/O ports");
+    await sl(100);
+    log('[Synth 8-256] Top module: '+D_topName+' ('+Object.keys(parsed.modules).length+' module(s) parsed)');
+    if(Object.keys(parsed.modules).length>1)log('[Synth 8-256] Sub-modules: '+parsed.order.filter(n=>n!==D_topName).join(', '));
+    log('[Synth 8-7080] '+topMod.ports.length+' ports, '+topMod.SEQ.length+' sequential, '+topMod.COMB.length+' combinational, '+topMod.INS.length+' instances');
+    const pd=topMod.ports.map(n=>{const p=topMod.E[n];return p.d+' '+n+(p.w>1?' ['+(p.w-1)+':0]':'')}).join(', ');
+    log('[Synth 8-638] Ports: '+pd);
+    if(FAST_DIV)log('[Synth] Fast Divider Active: Constant divider thresholds scaled proportionally for interactive board execution.','i');
+    await sl(80);
+    log('synth_design completed successfully','o');
+    log('Next step: Click "2. Implementation" to place & route.','p');
+    $('b2').disabled=false;$('b3').disabled=true;if($('bDump'))$('bDump').disabled=true;
+  }catch(e){
+    log('ERROR: [Synth] '+e.message,'e');
+    log('synth_design failed','e');
+    $('b2').disabled=$('b3').disabled=true;
+    if($('bDump'))$('bDump').disabled=true;
+  }
+}
+
+async function flowImp(){
+  try{
+    log('───────────────────────────────────────','i');
+    log('[Place 30-1] Starting Implementation...','p');
+    await sl(100);
+    const topMod=D_mods[D_topName];
+    const xdcRaw=$('t2').value;const pinProps={};
+    for(const line of xdcRaw.split('\n')){
+      if(line.trim().startsWith('#'))continue;
+      const mp=line.match(/PACKAGE_PIN\s+(\w+)/);
+      const pp=line.match(/get_ports\s*\{?\s*([A-Za-z_]\w*(?:\[\d+\])?)\s*\}?/);
+      if(mp&&pp)pinProps[pp[1]]=mp[1].toUpperCase()}
+    await sl(80);
+    log('[Constraints] '+Object.keys(pinProps).length+' pin constraints read');
+    const used={},bad=[];pinMap=[];
+    for(const portName of topMod.ports){
+      const port=topMod.E[portName];
+      for(let bit=0;bit<port.w;bit++){
+        const key=port.w>1?portName+'['+bit+']':portName;
+        let pin=pinProps[key]||(port.w===1&&pinProps[portName+'[0]']);
+        if(!pin){bad.push("Unconstrained port '"+key+"'");continue}
+        const r=PIN[pin];if(!r){bad.push("Pin "+pin+" ("+key+") is not a valid Nexys4DDR I/O");continue}
+        if(used[pin]){bad.push("Pin "+pin+" assigned to both "+used[pin]+" and "+key);continue}
+        used[pin]=key;
+        const isInput=port.d==='input',isBoardIn=['sw','btn','clk','resetn'].includes(r.r);
+        if(isInput!==isBoardIn){bad.push(key+" is "+port.d+" but pin "+pin+" is board "+r.r);continue}
+        pinMap.push({n:portName,b:bit,...r,pin})
+      }
+    }
+    if(bad.length){bad.forEach(l=>log('ERROR: [Place] '+l,'e'));log('place_design failed','e');$('b3').disabled=true;return}
+    hasAn=pinMap.some(p=>p.r==='an');
+    if(!hasAn&&pinMap.some(p=>p.r==='seg'))log('[DRC] No anode (an) port constrained. Digit 0 enabled by default.','w');
+    await sl(100);
+    log('place_design completed','o');
+    await sl(80);
+    log('route_design completed, 0 errors, timing met','o');
+    log('Next step: Click "3. Bitstream" to generate .bit configuration file.','p');
+    $('b3').disabled=false;
+    if($('bDump'))$('bDump').disabled=true;
+  }catch(e){
+    log('ERROR: '+e.message,'e');
+    $('b3').disabled=true;
+    if($('bDump'))$('bDump').disabled=true;
+  }
+}
+
+async function flowBit(){
+  try{
+    log('───────────────────────────────────────','i');
+    log('[Bitstream] Generating bitstream...','p');
+    await sl(100);
+    D=elaborateModule(D_mods[D_topName],D_mods);
+    log('Bitstream generated successfully: '+D_topName+'.bit','o');
+    await sl(80);
+    $('bDump').disabled=false;
+    log('Next step: Click "4. Hardware Dump Code" to program the Artix-7 FPGA!','p');
+  }catch(e){
+    if($('bDump'))$('bDump').disabled=true;
+    log('ERROR: [Bitstream] '+e.message,'e');
+  }
+}
+
+async function flowDumpHardware(){
+  if(!D_mods||!D_topName)return;
+  const bDump=$('bDump'),jLed=$('jtagLed'),jText=$('jtagText');
+  if(bDump)bDump.disabled=true;
+  try{
+    log('───────────────────────────────────────','i');
+    log('[Hardware Dump] Starting Digilent Adept JTAG Programmer...','p');
+
+    // 🔴 PHASE 1: RED - Connecting
+    if(jLed){jLed.style.background='#f85149';jLed.style.boxShadow='0 0 12px #f85149';jLed.style.borderColor='#f85149'}
+    if(jText){jText.textContent='🔴 Connecting JTAG...';jText.style.color='#f85149'}
+    log('[JTAG 51-24] Scanning JTAG Chain (Digilent USB-JTAG-0)... Target Artix-7 xc7a100tcsg324-1 found.','i');
+    await sl(400);
+
+    // 🟡 PHASE 2: YELLOW - Erasing & Writing
+    if(jLed){jLed.style.background='#d29922';jLed.style.boxShadow='0 0 12px #d29922';jLed.style.borderColor='#d29922'}
+    if(jText){jText.textContent='🟡 Programming Flash...';jText.style.color='#d29922'}
+    log('[JTAG 51-27] Erasing FPGA Configuration Flash & Transferring Bitstream ('+D_topName+'.bit)... 100% verified.','w');
+    await sl(450);
+
+    // 🟢 PHASE 3: GREEN - Done & Verified Live!
+    if(jLed){jLed.style.background='#39d353';jLed.style.boxShadow='0 0 14px #39d353';jLed.style.borderColor='#39d353'}
+    if(jText){jText.textContent='🟢 DONE (LIVE)';jText.style.color='#39d353'}
+    log('[JTAG 51-29] Programming Succeeded! DONE pin is HIGH. Board is LIVE and operational!','o');
+
+    D=elaborateModule(D_mods[D_topName],D_mods);
+    
+    // Execute design initial blocks on FPGA startup
+    function runInits(unit){
+      const savedE=E;E=unit.E;
+      for(const ini of(unit.INI||[])){if(ini.k!=='dl_loop')run(ini)}
+      for(const inst of(unit.instances||[]))runInits(inst.unit);
+      E=savedE;
+    }
+    runInits(D);
+    settle(D);
+
+    const segOut=pinMap.filter(m=>m.r==='seg'&&m.i<7&&D_mods[D_topName].E[m.n].d==='output');
+    AUTO_POL=segOut.length&&segOut.reduce((a,m)=>a+((D.E[m.n].v>>>m.b)&1),0)>=4?'high':'low';
+    isProgrammed=true;
+    syncHW(true);
+
+    if(pinMap.some(p=>p.r==='clk')){
+      log('[Clock] Auto-starting Clock Runner so the circuit executes immediately! Click "Pause" anytime.','i');
+      startClockRunner();
+    }
+  }catch(e){
+    isProgrammed=false;
+    if(jLed){jLed.style.background='#f85149';jLed.style.boxShadow='none';jLed.style.borderColor='#f85149'}
+    if(jText){jText.textContent='Error';jText.style.color='#f85149'}
+    log('ERROR: [Dump] '+e.message,'e');
+    renderBoardState();
+  }finally{
+    if(bDump)bDump.disabled=false;
+  }
+}
+
+/* ====================== TESTBENCH SIM ========================= */
+function flowSim(){
+  try{
+    $('log').innerHTML='';log('───────────────────────────────────────','i');log('[XSIM] Starting Behavioral Simulation...','p');
+    const dParsed=parseSource($('t0').value);if(!Object.keys(dParsed.modules).length)throw Error('No design modules found');
+    const tbParsed=parseSource($('t1').value);if(!Object.keys(tbParsed.modules).length)throw Error('No testbench module found');
+    const tbName=findTopModule(tbParsed.modules,tbParsed.order);
+    const tbMod=tbParsed.modules[tbName];
+    const allMods={...dParsed.modules,...tbParsed.modules};
+    const tbUnit=elaborateModule(tbMod,allMods);
+    SM={T:0,finished:false,maxTime:500000,
+      log:(m,c)=>log(m,c),
+      sysCall:(s)=>{
+        if(s.f==='$finish'||s.f==='$stop'){SM.finished=true;throw FIN}
+        if(s.f==='$display'||s.f==='$write'||s.f==='$strobe'){const t=fmtSys(s.a);log('t='+SM.T+'ns: '+t,'o')}
+        if(s.f==='$monitor'){SM.monArgs=s.a;SM.monLast=''}
+      }};
+    const clkGens=tbUnit.INI.filter(i=>i.k==='dl_loop');
+    const stdInits=tbUnit.INI.filter(i=>i.k!=='dl_loop');
+    const stepTB=(action)=>{
+      const snap={};for(const k in tbUnit.E)snap[k]=tbUnit.E[k].v;
+      E=tbUnit.E;action();
+      const edges=[];
+      for(const k in tbUnit.E){
+        const oldV=snap[k]||0,newV=tbUnit.E[k].v||0;
+        if(oldV!==newV){
+          for(let b=0;b<tbUnit.E[k].w;b++){
+            const o=(oldV>>b)&1,n=(newV>>b)&1;
+            if(o!==n)edges.push({sig:k,bit:b,edge:(o===0&&n===1)?'posedge':'negedge'});
+          }
+        }
+      }
+      if(edges.length)triggerSeq(tbUnit,edges);else settle(tbUnit)};
+    const runClkGen=()=>{for(const cg of clkGens){if(SM.T%cg.delay===0)stepTB(()=>run(cg.body))}};
+    const monCheck=()=>{if(!SM.monArgs)return;E=tbUnit.E;const t=fmtSys(SM.monArgs);const line='t='+SM.T+'ns: '+t;if(line!==SM.monLast){SM.monLast=line;log(line,'o')}};
+    SM.onDelay=(delay)=>{settle(tbUnit);const target=SM.T;let cur=SM.T-delay;
+      while(cur<target&&!SM.finished){cur++;SM.T=cur;runClkGen();monCheck()}
+      settle(tbUnit)};
+    SM.onWait=(events)=>{settle(tbUnit);
+      const maxT=SM.T+100000;let found=false;
+      while(!found&&SM.T<maxT&&!SM.finished){
+        SM.T++;
+        for(const cg of clkGens){if(SM.T%cg.delay===0){
+          const olds={};for(const evt of events)if(tbUnit.E[evt.sig])olds[evt.sig]=tbUnit.E[evt.sig].v;
+          stepTB(()=>run(cg.body));
+          for(const evt of events){if(tbUnit.E[evt.sig]){
+            const bit = evt.bit !== undefined ? evt.bit : 0;
+            const o=((olds[evt.sig]||0)>>bit)&1,n=(tbUnit.E[evt.sig].v>>bit)&1;
+            if(evt.edge==='posedge'&&o===0&&n===1)found=true;
+            if(evt.edge==='negedge'&&o===1&&n===0)found=true;
+            if(evt.edge==='any'&&o!==n)found=true}}}}}
+      if(!found&&!SM.finished)log('Warning: @(event) wait timed out','w');
+      monCheck()};
+    settle(tbUnit);
+    E=tbUnit.E;
+    for(const initBlock of stdInits)stepTB(()=>run(initBlock));
+    monCheck();
+    log('[XSIM] Simulation finished cleanly.','o')}
+  catch(e){if(e!==FIN)log('ERROR: [XSIM] '+e.message,'e');else log('[XSIM] Simulation finished via $finish.','o')}
+  finally{SM=null}}
+
+function fmtSys(a){if(!a||!a.length)return'';
+  const savedE=E;
+  try{if(a[0].k!=='s')return a.map(x=>ev(x)[0]).join(' ');
+  let idx=1;return a[0].v.replace(/\\n/g,'\n').replace(/%(-?\d*)([bdhxots%])/g,(_,n,c)=>{
+    if(c==='%')return'%';if(c==='t')return SM?SM.T:0;if(c==='s')return'';if(idx>=a.length)return'';
+    const[v,w]=ev(a[idx++]);
+    if(c==='b')return v.toString(2).padStart(+n||w,'0');if(c==='d')return String(v);if(c==='o')return v.toString(8);
+    return v.toString(16).toUpperCase().padStart(Math.ceil(w/4),'0')})}
+  finally{E=savedE}}
+
+/* ====================== BOARD STATE ========================= */
+const HW={sw:Array(16).fill(0),btn:Array(5).fill(0),resetn:1,clk:0};
+const digPersist=Array(8).fill(null);let digTS=Array(8).fill(0);
+let HW_OUT={led:Array(16).fill(0),seg:Array(8).fill(null),an:Array(8).fill(1),rgb16:{r:0,g:0,b:0},rgb17:{r:0,g:0,b:0}};
+
+function syncHW(render=true){
+  if(!isProgrammed||!D){if(render)renderBoardState();return}
+  try{const edges=[];
+    pinMap.forEach(m=>{const port=D.E[m.n];if(port.d==='input'){
+      let val=0;if(m.r==='sw')val=HW.sw[m.i];else if(m.r==='btn')val=HW.btn[m.i];else if(m.r==='resetn')val=HW.resetn;else if(m.r==='clk')val=HW.clk;
+      const old=(port.v>>>m.b)&1;if(old!==val){port.v=u((port.v&~(1<<m.b))|(val<<m.b));
+        if(old===0&&val===1)edges.push({sig:m.n,edge:'posedge'});else edges.push({sig:m.n,edge:'negedge'})}}});
+    if(edges.length)triggerSeq(D,edges);else settle(D);
+    HW_OUT={led:Array(16).fill(0),seg:Array(8).fill(null),an:Array(8).fill(1).map((v,i)=>hasAn||i?v:0),rgb16:{r:0,g:0,b:0},rgb17:{r:0,g:0,b:0}};
+    pinMap.forEach(m=>{const port=D.E[m.n];if(port.d==='output'){const bv=(port.v>>>m.b)&1;
+      if(m.r==='led')HW_OUT.led[m.i]=bv;else if(m.r==='seg')HW_OUT.seg[m.i]=bv;else if(m.r==='an')HW_OUT.an[m.i]=bv;else if(m.r==='rgb'){if(m.i===16)HW_OUT.rgb16[m.c]=bv;else if(m.i===17)HW_OUT.rgb17[m.c]=bv}}});
+    const now=performance.now();for(let d=0;d<8;d++){if(HW_OUT.an[d]===0){digPersist[d]=[...HW_OUT.seg];digTS[d]=now}else if(now-digTS[d]>200)digPersist[d]=null}}
+  catch(e){log('Runtime: '+e.message,'e')}
+  renderBoardState()}
+
+function renderBoardState(){
+  const badge=$('boardBadge');
+  if(badge){
+    if(isProgrammed){badge.textContent='Programmed & Running';badge.style.background='#23863622';badge.style.color='#3fb950';badge.style.borderColor='#2ea04344'}
+    else{badge.textContent='Unprogrammed';badge.style.background='#30363d';badge.style.color='#8b949e';badge.style.borderColor='transparent'}
+  }
+  for(let i=0;i<16;i++){const sw=$('s_'+i);if(sw)sw.classList.toggle('on',!!HW.sw[i])}
+  ['BTNC','BTNU','BTNL','BTNR','BTND'].forEach((n,i)=>{const b=$('btn_'+n);if(b)b.classList.toggle('pressed',!!HW.btn[i])});
+  const rb=$('btn_RESETN');if(rb)rb.classList.toggle('pressed',HW.resetn===0);
+  for(let i=0;i<16;i++){const l=$('led_'+i);if(l)l.classList.toggle('on',isProgrammed&&!!HW_OUT.led[i])}
+  const setRgbEl=(id,c)=>{const el=$(id);if(!el)return;
+    const r=isProgrammed&&c.r?255:0,g=isProgrammed&&c.g?255:0,b=isProgrammed&&c.b?255:0;
+    if(!r&&!g&&!b){el.style.background='#12151b';el.style.boxShadow='none';el.style.borderColor='#30363d'}
+    else{const col=`rgb(${r},${g},${b})`;el.style.background=col;el.style.boxShadow=`0 0 10px ${col},0 0 20px ${col}`;el.style.borderColor=col}};
+  setRgbEl('ld16',HW_OUT.rgb16);setRgbEl('ld17',HW_OUT.rgb17);
+  const pol=$('pol').value,al=(pol==='auto'?AUTO_POL:pol)==='high'?1:0;
+  for(let d=0;d<8;d++){const sv=(HW_OUT.an[d]===0)?HW_OUT.seg:(digPersist[d]||Array(8).fill(null));
+    for(let s=0;s<8;s++){const se=$('g'+d+'_'+s);if(se)se.classList.toggle('on',!!(isProgrammed&&sv[s]!==null&&sv[s]===al))}}}
+
+/* ====================== CLOCK ENGINE ======================== */
+// Distinct timer handles for setTimeout (low freq) and requestAnimationFrame (high freq)
+let clockTimeoutId=null, clockRafId=null, clockRunning=false;
+
+function toggleClockRunner(){clockRunning?stopClockRunner():startClockRunner()}
+function startClockRunner(){
+  if(!isProgrammed){log('[Clock] Program the board first','w');return}
+  clockRunning=true;
+  $('clkToggleBtn').textContent='⏸ Pause';
+  $('clkToggleBtn').classList.add('step-btn');
+  $('clkStatusText').textContent='CLOCK RUNNING';
+  $('clkStatusText').style.color='#3fb950';
+  runClockLoop();
+}
+
+function stopClockRunner(){
+  clockRunning=false;
+  if(clockTimeoutId){clearTimeout(clockTimeoutId);clockTimeoutId=null}
+  if(clockRafId){
+    if(typeof cancelAnimationFrame==='function')cancelAnimationFrame(clockRafId);
+    clockRafId=null;
+  }
+  $('clkToggleBtn').textContent='▶ Run Clock';
+  $('clkToggleBtn').classList.remove('step-btn');
+  $('clkStatusText').textContent='Clock Paused';
+  $('clkStatusText').style.color='var(--mu)';
+  $('clkLed').classList.remove('active');
+}
+
+function updateClockFreq(){if(clockRunning){stopClockRunner();startClockRunner()}}
+
+function runClockLoop(){
+  if(!clockRunning||!isProgrammed)return;
+  const freq=+($('clkFreqSelect')?.value)||25,clkLed=$('clkLed');
+  if(freq<=25){
+    const iv=Math.max(20,Math.floor(1000/freq));
+    HW.clk=0;clkLed.classList.remove('active');syncHW(true);
+    clockTimeoutId=setTimeout(()=>{
+      if(!clockRunning)return;
+      HW.clk=1;clkLed.classList.add('active');syncHW(true);
+      clockTimeoutId=setTimeout(runClockLoop,iv/2);
+    },iv/2);
+  } else {
+    const cycles=freq===100?2:freq===1000?8:freq===50000?16:32;
+    for(let i=0;i<cycles;i++){HW.clk=0;syncHW(false);HW.clk=1;syncHW(false)}
+    clkLed.classList.toggle('active');
+    renderBoardState();
+    clockRafId=requestAnimationFrame(runClockLoop);
+  }
+}
+
+function stepClockManual(){
+  if(!isProgrammed){log('[Clock] Program the board first','w');return}
+  HW.clk=0;syncHW(false);HW.clk=1;syncHW(true);HW.clk=0;syncHW(true);
+  $('clkLed').classList.add('active');setTimeout(()=>$('clkLed').classList.remove('active'),80);
+}
+
+/* ====================== UI BUILD ============================ */
+const ledsC=$('leds');for(let i=15;i>=0;i--){const d=document.createElement('div');d.className='led-unit';d.innerHTML='<div class="led" id="led_'+i+'"></div><span>'+i+'</span>';ledsC.appendChild(d)}
+const swsC=$('sws');for(let i=15;i>=0;i--){const d=document.createElement('div');d.className='sw-unit';d.innerHTML='<div class="sw-slider" id="s_'+i+'"></div><span>'+i+'</span>';d.querySelector('.sw-slider').onclick=(()=>{const idx=i;return()=>{HW.sw[idx]^=1;syncHW()}})();swsC.appendChild(d)}
+function resetAllSwitches(){HW.sw.fill(0);syncHW()}
+const dgsC=$('dgs');for(let i=7;i>=0;i--){const w=document.createElement('div');w.className='dg-digit-wrap';w.innerHTML='<svg class="dg" viewBox="0 0 40 70"><rect id="g'+i+'_0" x="6" y="2" width="28" height="5" rx="1"/><rect id="g'+i+'_1" x="33" y="8" width="5" height="26" rx="1"/><rect id="g'+i+'_2" x="33" y="38" width="5" height="26" rx="1"/><rect id="g'+i+'_3" x="6" y="63" width="28" height="5" rx="1"/><rect id="g'+i+'_4" x="2" y="38" width="5" height="26" rx="1"/><rect id="g'+i+'_5" x="2" y="8" width="5" height="26" rx="1"/><rect id="g'+i+'_6" x="6" y="32" width="28" height="5" rx="1"/><circle id="g'+i+'_7" cx="37" cy="66" r="2.5"/></svg><div class="dg-idx">AN'+i+'</div>';dgsC.appendChild(w)}
+['BTNC','BTNU','BTNL','BTNR','BTND'].forEach((n,i)=>{const b=$('btn_'+n);if(!b)return;
+  const pr=()=>{HW.btn[i]=1;syncHW()},rl=()=>{HW.btn[i]=0;syncHW()};
+  b.onpointerdown=pr;b.onpointerup=b.onpointerleave=b.onpointercancel=rl});
+const resetBtn=$('btn_RESETN');
+if(resetBtn){const pr=()=>{HW.resetn=0;syncHW()},rl=()=>{HW.resetn=1;syncHW()};
+  resetBtn.onpointerdown=pr;resetBtn.onpointerup=resetBtn.onpointerleave=resetBtn.onpointercancel=rl}
+addEventListener('blur',()=>{HW.btn.fill(0);HW.resetn=1;syncHW()});
+
+
+/* ====================== SIMULATION SCALING & LAYOUT ========= */
+let currentSimScale = 1.0;
+let isMaxSim = false;
+let savedSplitW = null;
+
+function setSimScale(val){
+  currentSimScale = Math.min(2.0, Math.max(0.6, parseFloat(val) || 1.0));
+  currentSimScale = Math.round(currentSimScale * 100) / 100;
+  
+  const board = document.querySelector('.nexys-board');
+  const valEl = $('simScaleVal');
+  const selEl = $('simScaleSelect');
+  const slider = $('simScaleSlider');
+  
+  if (valEl) valEl.textContent = Math.round(currentSimScale * 100) + '%';
+  if (slider) slider.value = Math.round(currentSimScale * 100);
+  
+  if (selEl) {
+    let matched = false;
+    for (const opt of selEl.options) {
+      if (Math.abs(parseFloat(opt.value) - currentSimScale) < 0.04) {
+        selEl.value = opt.value;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      let customOpt = selEl.querySelector('option[data-custom="1"]');
+      if (!customOpt) {
+        customOpt = document.createElement('option');
+        customOpt.dataset.custom = "1";
+        selEl.appendChild(customOpt);
+      }
+      customOpt.value = currentSimScale;
+      customOpt.textContent = Math.round(currentSimScale * 100) + '%';
+      selEl.value = currentSimScale;
+    }
+  }
+  
+  if (board) {
+    board.style.zoom = currentSimScale;
+    if (typeof CSS !== 'undefined' && !CSS.supports('zoom', '1')) {
+      board.style.transform = `scale(${currentSimScale})`;
+      board.style.transformOrigin = 'top center';
+      const wrap = $('nexysBoardWrap');
+      if (wrap) wrap.style.height = (board.offsetHeight * currentSimScale) + 'px';
+    }
+  }
+  safeStorage.set('nx4_sim_zoom', currentSimScale);
+}
+
+function adjustSimScale(delta){
+  setSimScale(currentSimScale + delta);
+}
+
+function resetSimScale(){
+  setSimScale(1.0);
+}
+
+function resetToDefaultView(){
+  setSimScale(1.0);
+  const appMain = $('appMain');
+  const paneLeft = $('paneLeft');
+  const resizerH = $('resizerH');
+  const btn = $('btnMaxSim');
+  if (appMain && paneLeft) {
+    if (isMaxSim) {
+      paneLeft.style.display = 'flex';
+      paneLeft.style.minWidth = '140px';
+      if (resizerH) resizerH.style.display = 'flex';
+      isMaxSim = false;
+      if (btn) { btn.textContent = '⛶ Maximize'; btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
+    }
+    const defaultW = Math.round(appMain.clientWidth * 0.5);
+    paneLeft.style.width = defaultW + 'px';
+    safeStorage.set('nx4_split_w', defaultW);
+  }
+  safeStorage.set('nx4_sim_zoom', 1.0);
+  log('[View] Layout and simulation board reset to default (100% scale, 50:50 split).', 'i');
+}
+
+
+function fitSimToHeight(){
+  const pane = $('paneRight');
+  const board = document.querySelector('.nexys-board');
+  if (!pane || !board) return;
+  board.style.zoom = 1.0;
+  const availH = pane.clientHeight - 70;
+  const boardH = board.scrollHeight || board.offsetHeight;
+  if (boardH > 0 && availH > 0) {
+    const scale = Math.min(1.8, Math.max(0.65, (availH / boardH)));
+    setSimScale(scale);
+  }
+}
+
+function setPaneSplit(percentEditor){
+  const appMain = $('appMain');
+  const paneLeft = $('paneLeft');
+  const resizerH = $('resizerH');
+  if (!appMain || !paneLeft) return;
+  
+  if (isMaxSim) {
+    paneLeft.style.display = 'flex';
+    paneLeft.style.minWidth = '140px';
+    if (resizerH) resizerH.style.display = 'flex';
+    isMaxSim = false;
+    const btn = $('btnMaxSim');
+    if (btn) { btn.textContent = '⛶ Maximize'; btn.style.background = ''; btn.style.color = ''; }
+  }
+  
+  const totalW = appMain.clientWidth;
+  const targetW = Math.max(140, Math.min(totalW - 200, Math.round(totalW * (percentEditor / 100))));
+  paneLeft.style.width = targetW + 'px';
+  safeStorage.set('nx4_split_w', targetW);
+}
+
+function toggleMaxSim(){
+  const appMain = $('appMain');
+  const paneLeft = $('paneLeft');
+  const resizerH = $('resizerH');
+  const btn = $('btnMaxSim');
+  if (!appMain || !paneLeft) return;
+  
+  if (!isMaxSim) {
+    savedSplitW = paneLeft.style.width || (paneLeft.clientWidth + 'px');
+    paneLeft.style.display = 'none';
+    if (resizerH) resizerH.style.display = 'none';
+    isMaxSim = true;
+    if (btn) {
+      btn.textContent = '❐ Restore Split';
+      btn.style.background = '#238636';
+      btn.style.borderColor = '#2ea043';
+      btn.style.color = '#fff';
+    }
+  } else {
+    paneLeft.style.display = 'flex';
+    paneLeft.style.minWidth = '140px';
+    if (resizerH) resizerH.style.display = 'flex';
+    const totalW = appMain.clientWidth;
+    const restoredW = savedSplitW ? parseFloat(savedSplitW) : (totalW * 0.5);
+    const clampedW = Math.max(140, Math.min(totalW - 200, restoredW));
+    paneLeft.style.width = clampedW + 'px';
+    safeStorage.set('nx4_split_w', clampedW);
+    isMaxSim = false;
+    if (btn) {
+      btn.textContent = '⛶ Maximize';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+  }
+}
+
+/* ====================== RESIZABLE SPLITTERS ================= */
+function initSplitters(){
+  const paneLeft=$('paneLeft');
+  const paneEditor=$('paneEditor');
+  const resizerH=$('resizerH');
+  const resizerV=$('resizerV');
+  const appMain=$('appMain');
+
+  if(!paneLeft||!paneEditor||!resizerH||!resizerV||!appMain)return;
+
+  // Restore saved sizes safely
+  const savedW=safeStorage.get('nx4_split_w');
+  if(savedW&&window.innerWidth>960){
+    const clampedW=Math.max(140,Math.min(window.innerWidth-200,parseFloat(savedW)));
+    paneLeft.style.width=clampedW+'px';
+  }
+  // Restore simulation zoom
+  const savedZoom=safeStorage.get('nx4_sim_zoom');
+  if(savedZoom){
+    setSimScale(parseFloat(savedZoom));
+  }
+  const savedH=safeStorage.get('nx4_split_h');
+  if(savedH&&window.innerWidth>960){
+    const leftH=paneLeft.clientHeight||500;
+    const clampedH=Math.max(160,Math.min(leftH-110,parseFloat(savedH)));
+    paneEditor.style.height=clampedH+'px';
+  }
+
+  // Horizontal Dragging (Left / Right)
+  let isDraggingH=false;
+  resizerH.addEventListener('pointerdown',e=>{
+    if(window.innerWidth<=960)return;
+    isDraggingH=true;
+    try{resizerH.setPointerCapture(e.pointerId)}catch(err){}
+    resizerH.classList.add('dragging');
+    document.body.classList.add('resizing-h');
+  });
+
+  resizerH.addEventListener('pointermove',e=>{
+    if(!isDraggingH)return;
+    const containerRect=appMain.getBoundingClientRect();
+    const offsetLeft=e.clientX-containerRect.left;
+    const minW=140;
+    const maxW=containerRect.width-200;
+    const clamped=Math.max(minW,Math.min(maxW,offsetLeft));
+    paneLeft.style.width=clamped+'px';
+    safeStorage.set('nx4_split_w',clamped);
+    if(isMaxSim){
+      isMaxSim=false;
+      const btn=$('btnMaxSim');
+      if(btn){btn.textContent='⛶ Maximize';btn.style.background='';btn.style.borderColor='';btn.style.color=''}
+    }
+  });
+
+  const stopDragH=e=>{
+    if(!isDraggingH)return;
+    isDraggingH=false;
+    try{resizerH.releasePointerCapture(e.pointerId)}catch(err){}
+    resizerH.classList.remove('dragging');
+    document.body.classList.remove('resizing-h');
+  };
+  resizerH.addEventListener('pointerup',stopDragH);
+  resizerH.addEventListener('pointercancel',stopDragH);
+
+  // Vertical Dragging (Top / Bottom)
+  let isDraggingV=false;
+  resizerV.addEventListener('pointerdown',e=>{
+    if(window.innerWidth<=960)return;
+    isDraggingV=true;
+    try{resizerV.setPointerCapture(e.pointerId)}catch(err){}
+    resizerV.classList.add('dragging');
+    document.body.classList.add('resizing-v');
+  });
+
+  resizerV.addEventListener('pointermove',e=>{
+    if(!isDraggingV)return;
+    const leftRect=paneLeft.getBoundingClientRect();
+    const offsetTop=e.clientY-leftRect.top;
+    const minH=160;
+    const maxH=leftRect.height-110;
+    const clamped=Math.max(minH,Math.min(maxH,offsetTop));
+    paneEditor.style.height=clamped+'px';
+    safeStorage.set('nx4_split_h',clamped);
+  });
+
+  const stopDragV=e=>{
+    if(!isDraggingV)return;
+    isDraggingV=false;
+    try{resizerV.releasePointerCapture(e.pointerId)}catch(err){}
+    resizerV.classList.remove('dragging');
+    document.body.classList.remove('resizing-v');
+  };
+  resizerV.addEventListener('pointerup',stopDragV);
+  resizerV.addEventListener('pointercancel',stopDragV);
+}
+
+initSplitters();
+renderBoardState();
+log('Nexys 4 DDR Simulator Ready — Multi-module, sequential (posedge/negedge), combinational, sub-module instantiation, reduction operators, proportional clock scaling, and XSIM testbench supported.','o');
+</script>
+<script>
+/* ================================================================
+   Nexys 4 DDR Simulator — Presets Expansion Pack (~38 Presets)
+   Contains: alu5, t2d, jk2d, sr2t, d2sr, arithmetic, counters,
+   FSMs, decoders, multiplexers, sequence detectors, converter circuits.
+   ================================================================ */
+const PACK_PRESETS = {
+  "alu5": {
+    "title": "5-Operation ALU (Add, Sub, AND, OR, XOR)",
+    "v": "module top(\n  input [3:0] a,\n  input [3:0] b,\n  input [2:0] op,\n  output reg [4:0] result\n);\n  always @(*) begin\n    case (op)\n      3'b000: result = a + b;\n      3'b001: result = a - b;\n      3'b010: result = a & b;\n      3'b011: result = a | b;\n      3'b100: result = a ^ b;\n      default: result = 5'b00000;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg [3:0] a, b;\n  reg [2:0] op;\n  wire [4:0] result;\n  top uut(.a(a), .b(b), .op(op), .result(result));\n  initial begin\n    a = 4'd5; b = 4'd3;\n    op = 3'b000; #10; $display(\"ADD: a=%d b=%d res=%d expect 8\", a, b, result);\n    op = 3'b001; #10; $display(\"SUB: a=%d b=%d res=%d expect 2\", a, b, result);\n    op = 3'b010; #10; $display(\"AND: a=%d b=%d res=%d expect 1\", a, b, result);\n    op = 3'b011; #10; $display(\"OR:  a=%d b=%d res=%d expect 7\", a, b, result);\n    op = 3'b100; #10; $display(\"XOR: a=%d b=%d res=%d expect 6\", a, b, result);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { a[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { a[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { a[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { b[0] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { b[1] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { b[2] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { b[3] }]\nset_property -dict { PACKAGE_PIN T8 IOSTANDARD LVCMOS33 } [get_ports { op[0] }]\nset_property -dict { PACKAGE_PIN U8 IOSTANDARD LVCMOS33 } [get_ports { op[1] }]\nset_property -dict { PACKAGE_PIN R16 IOSTANDARD LVCMOS33 } [get_ports { op[2] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { result[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { result[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { result[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { result[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { result[4] }]"
+  },
+  "t2d": {
+    "title": "T-FF to D-FF Conversion",
+    "v": "module top(\n  input clk,\n  input reset_n,\n  input d,\n  output reg q\n);\n  wire t = d ^ q;\n  always @(posedge clk or negedge reset_n) begin\n    if (!reset_n) q <= 0;\n    else if (t) q <= ~q;\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, reset_n, d;\n  wire q;\n  top uut(.clk(clk), .reset_n(reset_n), .d(d), .q(q));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; reset_n = 0; d = 0;\n    #12; reset_n = 1;\n    #8;\n    d = 1; #10; $display(\"t2d: d=%b q=%b expect 1\", d, q);\n    d = 0; #10; $display(\"t2d: d=%b q=%b expect 0\", d, q);\n    d = 1; #10; $display(\"t2d: d=%b q=%b expect 1\", d, q);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { d }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "jk2d": {
+    "title": "JK-FF to D-FF Conversion",
+    "v": "module top(\n  input clk,\n  input reset_n,\n  input d,\n  output reg q\n);\n  wire j = d;\n  wire k = ~d;\n  always @(posedge clk or negedge reset_n) begin\n    if (!reset_n) q <= 0;\n    else begin\n      case ({j, k})\n        2'b00: q <= q;\n        2'b01: q <= 0;\n        2'b10: q <= 1;\n        2'b11: q <= ~q;\n      endcase\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, reset_n, d;\n  wire q;\n  top uut(.clk(clk), .reset_n(reset_n), .d(d), .q(q));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; reset_n = 0; d = 0;\n    #12; reset_n = 1;\n    #8;\n    d = 1; #10; $display(\"jk2d: d=%b q=%b expect 1\", d, q);\n    d = 0; #10; $display(\"jk2d: d=%b q=%b expect 0\", d, q);\n    d = 1; #10; $display(\"jk2d: d=%b q=%b expect 1\", d, q);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { d }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "sr2t": {
+    "title": "SR-FF to T-FF Conversion",
+    "v": "module top(\n  input clk,\n  input reset_n,\n  input t,\n  output reg q\n);\n  wire s = t & ~q;\n  wire r = t & q;\n  always @(posedge clk or negedge reset_n) begin\n    if (!reset_n) q <= 0;\n    else begin\n      if (s && !r) q <= 1;\n      else if (!s && r) q <= 0;\n      else if (!s && !r) q <= q;\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, reset_n, t;\n  wire q;\n  top uut(.clk(clk), .reset_n(reset_n), .t(t), .q(q));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; reset_n = 0; t = 0;\n    #12; reset_n = 1;\n    #8;\n    t = 1; #10; $display(\"sr2t: t=%b q=%b expect 1\", t, q);\n    t = 0; #10; $display(\"sr2t: t=%b q=%b expect 1\", t, q);\n    t = 1; #10; $display(\"sr2t: t=%b q=%b expect 0\", t, q);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { t }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "d2sr": {
+    "title": "D-FF to SR-FF Conversion",
+    "v": "module top(\n  input clk,\n  input reset_n,\n  input s,\n  input r,\n  output reg q\n);\n  wire d = s | (~r & q);\n  always @(posedge clk or negedge reset_n) begin\n    if (!reset_n) q <= 0;\n    else q <= d;\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, reset_n, s, r;\n  wire q;\n  top uut(.clk(clk), .reset_n(reset_n), .s(s), .r(r), .q(q));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; reset_n = 0; s = 0; r = 0;\n    #12; reset_n = 1;\n    #8;\n    s = 1; r = 0; #10; $display(\"d2sr: s=%b r=%b q=%b expect 1\", s, r, q);\n    s = 0; r = 0; #10; $display(\"d2sr: s=%b r=%b q=%b expect 1\", s, r, q);\n    s = 0; r = 1; #10; $display(\"d2sr: s=%b r=%b q=%b expect 0\", s, r, q);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { s }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { r }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "sub4": {
+    "title": "1. 4-bit Binary Subtractor (2's Comp) on 7-Seg",
+    "v": "module top(\n  input [3:0] a,\n  input [3:0] b,\n  output reg [6:0] seg,\n  output [7:0] an\n);\n  assign an = 8'b11111110;\n  wire [3:0] b_comp;\n  wire [4:0] result;\n  assign b_comp = ~b + 1'b1;\n  assign result = a + b_comp;\n\n  always @(*) begin\n    case (result[3:0])\n      4'h0: seg = 7'b1000000; 4'h1: seg = 7'b1111001; 4'h2: seg = 7'b0100100;\n      4'h3: seg = 7'b0110000; 4'h4: seg = 7'b0011001; 4'h5: seg = 7'b0010010;\n      4'h6: seg = 7'b0000010; 4'h7: seg = 7'b1111000; 4'h8: seg = 7'b0000000;\n      4'h9: seg = 7'b0010000; 4'hA: seg = 7'b0001000; 4'hB: seg = 7'b0000011;\n      4'hC: seg = 7'b1000110; 4'hD: seg = 7'b0100001; 4'hE: seg = 7'b0000110;\n      4'hF: seg = 7'b0001110; default: seg = 7'b1111111;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg [3:0] a;\n  reg [3:0] b;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top uut(\n    .a(a),\n    .b(b),\n    .seg(seg),\n    .an(an)\n  );\n  initial begin\n    a = 0;\n    b = 0;\n    #10;\n    a = 15; #10;\n    b = 15; #10;\n    $display(\"1. 4-bit Binary Subtractor (2's Comp) on 7-Seg simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { a[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { a[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { a[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { b[0] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { b[1] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { b[2] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { b[3] }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "prio8to3": {
+    "title": "2. 8-to-3 Priority Encoder",
+    "v": "module top(\n  input [7:0] sw,\n  output reg [2:0] led,\n  output reg valid\n);\n  always @(*) begin\n    valid = 1'b1;\n    if (sw[7]) led = 3'd7;\n    else if (sw[6]) led = 3'd6;\n    else if (sw[5]) led = 3'd5;\n    else if (sw[4]) led = 3'd4;\n    else if (sw[3]) led = 3'd3;\n    else if (sw[2]) led = 3'd2;\n    else if (sw[1]) led = 3'd1;\n    else if (sw[0]) led = 3'd0;\n    else begin\n      led = 3'd0;\n      valid = 1'b0;\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg [7:0] sw;\n  wire [2:0] led;\n  wire valid;\n  top uut(\n    .sw(sw),\n    .led(led),\n    .valid(valid)\n  );\n  initial begin\n    sw = 0;\n    #10;\n    sw = 15; #10;\n    $display(\"2. 8-to-3 Priority Encoder simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { sw[4] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { sw[5] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { sw[6] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { sw[7] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { led[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { led[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { led[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { valid }]"
+  },
+  "ripple4": {
+    "title": "3. 4-bit Asynchronous Ripple Counter (D-FF)",
+    "v": "module dff(\n  input clk,\n  input rst,\n  output reg q,\n  output q_bar\n);\n  assign q_bar = ~q;\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 1'b0;\n    else q <= ~q;\n  end\nendmodule\n\nmodule top(\n  input clk,\n  input btnc,\n  output [3:0] led\n);\n  wire [3:0] q_bar;\n  dff d0 (.clk(clk),      .rst(btnc), .q(led[0]), .q_bar(q_bar[0]));\n  dff d1 (.clk(q_bar[0]), .rst(btnc), .q(led[1]), .q_bar(q_bar[1]));\n  dff d2 (.clk(q_bar[1]), .rst(btnc), .q(led[2]), .q_bar(q_bar[2]));\n  dff d3 (.clk(q_bar[2]), .rst(btnc), .q(led[3]), .q_bar(q_bar[3]));\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  wire [3:0] led;\n  top uut(\n    .clk(clk),\n    .btnc(rst),\n    .led(led)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1;\n    #12; rst = 0;\n    #8;  $display(\"clk 1: led=%0d expect 1\", led);\n    #10; $display(\"clk 2: led=%0d expect 2\", led);\n    #10; $display(\"clk 3: led=%0d expect 3\", led);\n    #10; $display(\"clk 4: led=%0d expect 4\", led);\n    #10; $display(\"clk 5: led=%0d expect 5\", led);\n    #10; $display(\"clk 6: led=%0d expect 6\", led);\n    #10; $display(\"clk 7: led=%0d expect 7\", led);\n    #10; $display(\"clk 8: led=%0d expect 8\", led);\n    #10; $display(\"clk 9: led=%0d expect 9\", led);\n    #10; $display(\"clk 10: led=%0d expect 10\", led);\n    #10; $display(\"clk 11: led=%0d expect 11\", led);\n    #10; $display(\"clk 12: led=%0d expect 12\", led);\n    #10; $display(\"clk 13: led=%0d expect 13\", led);\n    #10; $display(\"clk 14: led=%0d expect 14\", led);\n    #10; $display(\"clk 15: led=%0d expect 15\", led);\n    #10; $display(\"clk 16: led=%0d expect 0\", led);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { led[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { led[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { led[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { led[3] }]"
+  },
+  "comp4": {
+    "title": "4. 4-bit Binary Comparator",
+    "v": "module top(\n  input [3:0] a,\n  input [3:0] b,\n  output gt,\n  output eq,\n  output lt\n);\n  assign gt = (a > b);\n  assign eq = (a == b);\n  assign lt = (a < b);\nendmodule",
+    "tb": "module tb;\n  reg [3:0] a;\n  reg [3:0] b;\n  wire gt;\n  wire eq;\n  wire lt;\n  top uut(\n    .a(a),\n    .b(b),\n    .gt(gt),\n    .eq(eq),\n    .lt(lt)\n  );\n  initial begin\n    a = 0;\n    b = 0;\n    #10;\n    a = 15; #10;\n    b = 15; #10;\n    $display(\"4. 4-bit Binary Comparator simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { a[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { a[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { a[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { b[0] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { b[1] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { b[2] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { b[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { gt }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { eq }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { lt }]"
+  },
+  "decade": {
+    "title": "5. Decade (Mod-10) & Ring Counter",
+    "v": "module top(\n  input clk,\n  input btnc,\n  output reg [3:0] bcd,\n  output reg [3:0] ring\n);\n  always @(posedge clk or posedge btnc) begin\n    if (btnc) begin\n      bcd <= 4'd0;\n      ring <= 4'b0001;\n    end else begin\n      if (bcd == 4'd9) bcd <= 4'd0;\n      else bcd <= bcd + 1'b1;\n\n      ring <= {ring[2:0], ring[3]};\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg btnc;\n  wire [3:0] bcd;\n  wire [3:0] ring;\n  top uut(\n    .clk(clk),\n    .btnc(btnc),\n    .bcd(bcd),\n    .ring(ring)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    btnc = 0;\n    #12;\n    repeat(10) #10;\n    $display(\"5. Decade (Mod-10) & Ring Counter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { bcd[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { bcd[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { bcd[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { bcd[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { ring[0] }]\nset_property -dict { PACKAGE_PIN V17 IOSTANDARD LVCMOS33 } [get_ports { ring[1] }]\nset_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports { ring[2] }]\nset_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports { ring[3] }]"
+  },
+  "proj_sequence_detect": {
+    "title": "6. Sequence Detector '101' Overlapping FSM",
+    "v": "module top(\n  input clk,\n  input reset_n,\n  input sw,\n  output reg det,\n  output [1:0] state_led\n);\n  localparam S0 = 2'b00, S1 = 2'b01, S2 = 2'b10;\n  reg [1:0] state, next_state;\n  assign state_led = state;\n\n  always @(posedge clk or negedge reset_n) begin\n    if (!reset_n) state <= S0;\n    else state <= next_state;\n  end\n\n  always @(*) begin\n    det = 1'b0;\n    case (state)\n      S0: next_state = sw ? S1 : S0;\n      S1: next_state = sw ? S1 : S2;\n      S2: begin\n        if (sw) begin\n          next_state = S1;\n          det = 1'b1;\n        end else next_state = S0;\n      end\n      default: next_state = S0;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, reset_n, sw;\n  wire det;\n  wire [1:0] state_led;\n  top uut(.clk(clk), .reset_n(reset_n), .sw(sw), .det(det), .state_led(state_led));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; reset_n = 0; sw = 0;\n    #12; reset_n = 1; #8;\n    // Pattern: 1, 0, 1 -> det=1 (overlapping), then 0, 1 -> det=1\n    sw = 1; #10; $display(\"sw=1: det=%b expect 0\", det);\n    sw = 0; #10; $display(\"sw=0: det=%b expect 0\", det);\n    sw = 1; #1;  $display(\"sw=1: det=%b expect 1\", det); #9;\n    sw = 0; #10; $display(\"sw=0: det=%b expect 0\", det);\n    sw = 1; #1;  $display(\"sw=1: det=%b expect 1\", det); #9;\n    sw = 0; #10; $display(\"sw=0: det=%b expect 0\", det);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { det }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { state_led[0] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { state_led[1] }]"
+  },
+  "majority": {
+    "title": "7. Majority Function F = AB + BC + CA",
+    "v": "module top(\n  input a, input b, input c,\n  output f\n);\n  assign f = (a & b) | (b & c) | (c & a);\nendmodule",
+    "tb": "module tb;\n  reg a;\n  reg b;\n  reg c;\n  wire f;\n  top uut(\n    .a(a),\n    .b(b),\n    .c(c),\n    .f(f)\n  );\n  initial begin\n    a = 0;\n    b = 0;\n    c = 0;\n    #10;\n    a = 1; #10;\n    b = 1; #10;\n    c = 1; #10;\n    $display(\"7. Majority Function F = AB + BC + CA simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { b }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { c }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { f }]"
+  },
+  "parity4": {
+    "title": "8. 4-Bit Odd Parity Generator",
+    "v": "module top(\n  input [3:0] sw,\n  output parity\n);\n  assign parity = ~(sw[0] ^ sw[1] ^ sw[2] ^ sw[3]);\nendmodule",
+    "tb": "module tb;\n  reg [3:0] sw;\n  wire parity;\n  top uut(\n    .sw(sw),\n    .parity(parity)\n  );\n  initial begin\n    sw = 0;\n    #10;\n    sw = 15; #10;\n    $display(\"8. 4-Bit Odd Parity Generator simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { parity }]"
+  },
+  "usr4": {
+    "title": "9. Universal Shift Register",
+    "v": "module top(\n  input clk,\n  input rst,\n  input [1:0] mode,\n  input [3:0] d_in,\n  input s_left,\n  input s_right,\n  output reg [3:0] q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 4'b0000;\n    else begin\n      case (mode)\n        2'b00: q <= q; // Hold\n        2'b01: q <= {q[2:0], s_left}; // Shift left\n        2'b10: q <= {s_right, q[3:1]}; // Shift right\n        2'b11: q <= d_in; // Parallel load\n      endcase\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg [1:0] mode;\n  reg [3:0] d_in;\n  reg s_left;\n  reg s_right;\n  wire [3:0] q;\n  top uut(\n    .clk(clk),\n    .rst(rst),\n    .mode(mode),\n    .d_in(d_in),\n    .s_left(s_left),\n    .s_right(s_right),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    mode = 0;\n    d_in = 0;\n    s_left = 0;\n    s_right = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"9. Universal Shift Register simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { mode[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { mode[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { d_in[0] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { d_in[1] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { d_in[2] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { d_in[3] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { s_left }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { s_right }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { q[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { q[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { q[3] }]"
+  },
+  "bin2xs3": {
+    "title": "10. Binary to Excess-3 on 7-Segment",
+    "v": "module top(\n  input [3:0] bin,\n  output reg [6:0] seg,\n  output [7:0] an\n);\n  assign an = 8'b11111110;\n  wire [3:0] xs3;\n  assign xs3 = bin + 4'd3;\n\n  always @(*) begin\n    case (xs3)\n      4'h0: seg = 7'b1000000; 4'h1: seg = 7'b1111001; 4'h2: seg = 7'b0100100;\n      4'h3: seg = 7'b0110000; 4'h4: seg = 7'b0011001; 4'h5: seg = 7'b0010010;\n      4'h6: seg = 7'b0000010; 4'h7: seg = 7'b1111000; 4'h8: seg = 7'b0000000;\n      4'h9: seg = 7'b0010000; 4'hA: seg = 7'b0001000; 4'hB: seg = 7'b0000011;\n      4'hC: seg = 7'b1000110; default: seg = 7'b1111111;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg [3:0] bin;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top uut(\n    .bin(bin),\n    .seg(seg),\n    .an(an)\n  );\n  initial begin\n    bin = 0;\n    #10;\n    bin = 15; #10;\n    $display(\"10. Binary to Excess-3 on 7-Segment simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { bin[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { bin[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { bin[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { bin[3] }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "mult4": {
+    "title": "11. 4-bit Binary Multiplier (Shift-and-Add)",
+    "v": "module top(\n  input clk,\n  input start,\n  input [3:0] a,\n  input [3:0] b,\n  output reg [7:0] prod,\n  output reg done\n);\n  reg [1:0] state;\n  reg [2:0] count;\n  reg [7:0] multiplicand;\n  reg [3:0] multiplier;\n\n  always @(posedge clk) begin\n    if (start) begin\n      prod <= 8'd0;\n      multiplicand <= {4'b0000, a};\n      multiplier <= b;\n      count <= 3'd0;\n      done <= 1'b0;\n      state <= 2'd1;\n    end else if (state == 2'd1) begin\n      if (count < 3'd4) begin\n        if (multiplier[0]) prod <= prod + multiplicand;\n        multiplicand <= multiplicand << 1;\n        multiplier <= multiplier >> 1;\n        count <= count + 1'b1;\n      end else begin\n        done <= 1'b1;\n        state <= 2'd0;\n      end\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg start;\n  reg [3:0] a;\n  reg [3:0] b;\n  wire [7:0] prod;\n  wire done;\n  top uut(.clk(clk), .start(start), .a(a), .b(b), .prod(prod), .done(done));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; start = 0; a = 0; b = 0;\n    #12;\n    // 3 x 5 = 15\n    a = 3; b = 5; start = 1; #10; start = 0;\n    repeat(6) #10;\n    $display(\"3x5: prod=%0d done=%b expect prod=15 done=1\", prod, done);\n    // 15 x 15 = 225\n    a = 15; b = 15; start = 1; #10; start = 0;\n    repeat(6) #10;\n    $display(\"15x15: prod=%0d done=%b expect prod=225 done=1\", prod, done);\n    // 0 x 7 = 0\n    a = 0; b = 7; start = 1; #10; start = 0;\n    repeat(6) #10;\n    $display(\"0x7: prod=%0d done=%b expect prod=0 done=1\", prod, done);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { start }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { a[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { a[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { a[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { b[0] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { b[1] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { b[2] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { b[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { prod[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { prod[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { prod[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { prod[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { prod[4] }]\nset_property -dict { PACKAGE_PIN V17 IOSTANDARD LVCMOS33 } [get_ports { prod[5] }]\nset_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports { prod[6] }]\nset_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports { prod[7] }]\nset_property -dict { PACKAGE_PIN V16 IOSTANDARD LVCMOS33 } [get_ports { done }]"
+  },
+  "jk2d_proj": {
+    "title": "12. Flip-Flop Conversion: JK to D",
+    "v": "module jk_ff(\n  input clk, input rst,\n  input j, input k,\n  output reg q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 1'b0;\n    else begin\n      case ({j, k})\n        2'b00: q <= q;\n        2'b01: q <= 1'b0;\n        2'b10: q <= 1'b1;\n        2'b11: q <= ~q;\n      endcase\n    end\n  end\nendmodule\n\nmodule top(\n  input clk,\n  input btnc,\n  input d,\n  output q\n);\n  wire j, k;\n  assign j = d;\n  assign k = ~d;\n  jk_ff u_jk (.clk(clk), .rst(btnc), .j(j), .k(k), .q(q));\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg j;\n  reg k;\n  wire q;\n  jk_ff uut(\n    .clk(clk),\n    .rst(rst),\n    .j(j),\n    .k(k),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    j = 0;\n    k = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"12. Flip-Flop Conversion: JK to D simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { d }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "onehot4": {
+    "title": "13. 4-bit Binary to One-Hot Encoder",
+    "v": "module top(\n  input [3:0] sw,\n  output reg [15:0] led\n);\n  always @(*) begin\n    led = 16'h0000;\n    led[sw] = 1'b1;\n  end\nendmodule",
+    "tb": "module tb;\n  reg [3:0] sw;\n  wire [15:0] led;\n  top uut(\n    .sw(sw),\n    .led(led)\n  );\n  initial begin\n    sw = 0;\n    #10;\n    sw = 15; #10;\n    $display(\"13. 4-bit Binary to One-Hot Encoder simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { led[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { led[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { led[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { led[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { led[4] }]\nset_property -dict { PACKAGE_PIN V17 IOSTANDARD LVCMOS33 } [get_ports { led[5] }]\nset_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports { led[6] }]\nset_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports { led[7] }]\nset_property -dict { PACKAGE_PIN V16 IOSTANDARD LVCMOS33 } [get_ports { led[8] }]\nset_property -dict { PACKAGE_PIN T15 IOSTANDARD LVCMOS33 } [get_ports { led[9] }]\nset_property -dict { PACKAGE_PIN U14 IOSTANDARD LVCMOS33 } [get_ports { led[10] }]\nset_property -dict { PACKAGE_PIN T16 IOSTANDARD LVCMOS33 } [get_ports { led[11] }]\nset_property -dict { PACKAGE_PIN V15 IOSTANDARD LVCMOS33 } [get_ports { led[12] }]\nset_property -dict { PACKAGE_PIN V14 IOSTANDARD LVCMOS33 } [get_ports { led[13] }]\nset_property -dict { PACKAGE_PIN V12 IOSTANDARD LVCMOS33 } [get_ports { led[14] }]\nset_property -dict { PACKAGE_PIN V11 IOSTANDARD LVCMOS33 } [get_ports { led[15] }]"
+  },
+  "stopwatch": {
+    "title": "14. Digital Stopwatch (Seconds & Minutes)",
+    "v": "module top #(parameter CLK_HZ = 100000000)(\n  input clk,\n  input btnc, // reset\n  input sw,   // enable/run\n  output reg [5:0] sec,\n  output reg [5:0] min\n);\n  reg [31:0] tick_count;\n  always @(posedge clk or posedge btnc) begin\n    if (btnc) begin\n      tick_count <= 0;\n      sec <= 0;\n      min <= 0;\n    end else if (sw) begin\n      if (tick_count >= (CLK_HZ - 1)) begin\n        tick_count <= 0;\n        if (sec == 6'd59) begin\n          sec <= 0;\n          if (min == 6'd59) min <= 0;\n          else min <= min + 1'b1;\n        end else sec <= sec + 1'b1;\n      end else tick_count <= tick_count + 1'b1;\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg btnc;\n  reg sw;\n  wire [5:0] sec;\n  wire [5:0] min;\n  top uut(\n    .clk(clk),\n    .btnc(btnc),\n    .sw(sw),\n    .sec(sec),\n    .min(min)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    btnc = 0;\n    sw = 0;\n    #12;\n    repeat(10) #10;\n    $display(\"14. Digital Stopwatch (Seconds & Minutes) simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { sec[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { sec[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { sec[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { sec[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { sec[4] }]\nset_property -dict { PACKAGE_PIN V17 IOSTANDARD LVCMOS33 } [get_ports { sec[5] }]\nset_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports { min[0] }]\nset_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports { min[1] }]\nset_property -dict { PACKAGE_PIN V16 IOSTANDARD LVCMOS33 } [get_ports { min[2] }]\nset_property -dict { PACKAGE_PIN T15 IOSTANDARD LVCMOS33 } [get_ports { min[3] }]\nset_property -dict { PACKAGE_PIN U14 IOSTANDARD LVCMOS33 } [get_ports { min[4] }]\nset_property -dict { PACKAGE_PIN T16 IOSTANDARD LVCMOS33 } [get_ports { min[5] }]"
+  },
+  "sync_updown": {
+    "title": "15. 4-bit Synchronous Up/Down Counter",
+    "v": "module top(\n  input clk,\n  input rst,\n  input en,\n  input up_down,\n  output reg [3:0] count\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) count <= 4'd0;\n    else if (en) begin\n      if (up_down) count <= count + 1'b1;\n      else count <= count - 1'b1;\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg en;\n  reg up_down;\n  wire [3:0] count;\n  top uut(\n    .clk(clk),\n    .rst(rst),\n    .en(en),\n    .up_down(up_down),\n    .count(count)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    en = 0;\n    up_down = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"15. 4-bit Synchronous Up/Down Counter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { en }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { up_down }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { count[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { count[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { count[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { count[3] }]"
+  },
+  "traffic_rgb": {
+    "title": "16. Traffic Light with LD16 RGB LED",
+    "v": "module top(\n  input clk,\n  input reset_n,\n  output reg rgb_r,\n  output reg rgb_g,\n  output reg rgb_b\n);\n  localparam S_RED = 2'd0, S_GREEN = 2'd1, S_YELLOW = 2'd2;\n  reg [1:0] state;\n  reg [3:0] timer;\n\n  always @(posedge clk or negedge reset_n) begin\n    if (!reset_n) begin\n      state <= S_RED;\n      timer <= 0;\n    end else begin\n      if (state == S_RED && timer == 4'd4) begin\n        state <= S_GREEN; timer <= 0;\n      end else if (state == S_GREEN && timer == 4'd4) begin\n        state <= S_YELLOW; timer <= 0;\n      end else if (state == S_YELLOW && timer == 4'd1) begin\n        state <= S_RED; timer <= 0;\n      end else begin\n        timer <= timer + 1'b1;\n      end\n    end\n  end\n\n  always @(*) begin\n    rgb_r = 0; rgb_g = 0; rgb_b = 0;\n    case (state)\n      S_RED: rgb_r = 1;\n      S_GREEN: rgb_g = 1;\n      S_YELLOW: begin rgb_r = 1; rgb_g = 1; end // Yellow = Red + Green\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg reset_n;\n  wire rgb_r;\n  wire rgb_g;\n  wire rgb_b;\n  top uut(\n    .clk(clk),\n    .reset_n(reset_n),\n    .rgb_r(rgb_r),\n    .rgb_g(rgb_g),\n    .rgb_b(rgb_b)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    reset_n = 0;\n    #12;\n    reset_n = 1;\n    repeat(10) #10;\n    $display(\"16. Traffic Light with LD16 RGB LED simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports { reset_n }]\nset_property -dict { PACKAGE_PIN N15 IOSTANDARD LVCMOS33 } [get_ports { rgb_r }]\nset_property -dict { PACKAGE_PIN M16 IOSTANDARD LVCMOS33 } [get_ports { rgb_g }]\nset_property -dict { PACKAGE_PIN R12 IOSTANDARD LVCMOS33 } [get_ports { rgb_b }]"
+  },
+  "mux_bool": {
+    "title": "17. Boolean Expression F = A + BC via 4:1 MUX",
+    "v": "module top(\n  input a, input b, input c,\n  output f\n);\n  // Using 4-to-1 MUX with select lines (B, C):\n  // BC = 00 -> F = A\n  // BC = 01 -> F = A\n  // BC = 10 -> F = A\n  // BC = 11 -> F = 1\n  reg [3:0] mux_in;\n  always @(*) begin\n    mux_in[0] = a;\n    mux_in[1] = a;\n    mux_in[2] = a;\n    mux_in[3] = 1'b1;\n  end\n  assign f = mux_in[{b, c}];\nendmodule",
+    "tb": "module tb;\n  reg a;\n  reg b;\n  reg c;\n  wire f;\n  top uut(\n    .a(a),\n    .b(b),\n    .c(c),\n    .f(f)\n  );\n  initial begin\n    a = 0;\n    b = 0;\n    c = 0;\n    #10;\n    a = 1; #10;\n    b = 1; #10;\n    c = 1; #10;\n    $display(\"17. Boolean Expression F = A + BC via 4:1 MUX simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { b }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { c }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { f }]"
+  },
+  "seq_negedge": {
+    "title": "18. Negedge Sequence Detector '0110'",
+    "v": "module top(\n  input clk,\n  input rst,\n  input din,\n  output reg detected\n);\n  localparam S0=3'd0, S1=3'd1, S2=3'd2, S3=3'd3, S4=3'd4;\n  reg [2:0] state;\n\n  always @(negedge clk or posedge rst) begin\n    if (rst) begin\n      state <= S0;\n      detected <= 1'b0;\n    end else begin\n      detected <= 1'b0;\n      case (state)\n        S0: state <= (din == 0) ? S1 : S0;\n        S1: state <= (din == 1) ? S2 : S1;\n        S2: state <= (din == 1) ? S3 : S1;\n        S3: begin\n          if (din == 0) begin\n            state <= S1;\n            detected <= 1'b1;\n          end else state <= S0;\n        end\n        default: state <= S0;\n      endcase\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, rst, din;\n  wire detected;\n  top uut(.clk(clk), .rst(rst), .din(din), .detected(detected));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 1; rst = 1; din = 1;\n    #12; rst = 0;\n    // Clock falling edges at #15, #25, #35...\n    // Pattern: 0, 1, 1, 0 -> detected=1\n    din = 0; #10; $display(\"bit 0: det=%b expect 0\", detected);\n    din = 1; #10; $display(\"bit 1: det=%b expect 0\", detected);\n    din = 1; #10; $display(\"bit 1: det=%b expect 0\", detected);\n    din = 0; #10; $display(\"bit 0: det=%b expect 1\", detected);\n    // Overlapping continuation: stream in S1, send 1, 1, 0 -> detected=1\n    din = 1; #10; $display(\"bit 1: det=%b expect 0\", detected);\n    din = 1; #10; $display(\"bit 1: det=%b expect 0\", detected);\n    din = 0; #10; $display(\"bit 0: det=%b expect 1\", detected);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { din }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { detected }]"
+  },
+  "digclock": {
+    "title": "19. Digital Clock (HH:MM:SS) on 7-Segment",
+    "v": "// Digital Clock with HH:MM:SS on 6 7-segment digits\nmodule top #(parameter CLK_HZ = 100000000)(\n  input clk,\n  input btnc,\n  output reg [6:0] seg,\n  output reg [7:0] an\n);\n  reg [31:0] clk_cnt;\n  reg [5:0] sec, min;\n  reg [4:0] hour;\n  reg [2:0] refresh_cnt;\n  reg [3:0] cur_digit;\n\n  always @(posedge clk or posedge btnc) begin\n    if (btnc) begin\n      clk_cnt <= 0;\n      sec <= 0;\n      min <= 0;\n      hour <= 0;\n    end else begin\n      if (clk_cnt >= CLK_HZ - 1) begin\n        clk_cnt <= 0;\n        if (sec == 6'd59) begin\n          sec <= 0;\n          if (min == 6'd59) begin\n            min <= 0;\n            if (hour == 5'd23) hour <= 0;\n            else hour <= hour + 1'b1;\n          end else min <= min + 1'b1;\n        end else sec <= sec + 1'b1;\n      end else begin\n        clk_cnt <= clk_cnt + 1'b1;\n      end\n    end\n  end\n\n  // Refresh counter cycling through 6 digits (0..5)\n  // Ensures exactly one anode is active-low (0) among the 6 time digits at all times\n  always @(posedge clk or posedge btnc) begin\n    if (btnc) refresh_cnt <= 3'd0;\n    else if (refresh_cnt >= 3'd5) refresh_cnt <= 3'd0;\n    else refresh_cnt <= refresh_cnt + 1'b1;\n  end\n\n  always @(*) begin\n    case (refresh_cnt)\n      3'd0: begin an = 8'b11111110; cur_digit = sec % 10; end\n      3'd1: begin an = 8'b11111101; cur_digit = sec / 10; end\n      3'd2: begin an = 8'b11111011; cur_digit = min % 10; end\n      3'd3: begin an = 8'b11110111; cur_digit = min / 10; end\n      3'd4: begin an = 8'b11101111; cur_digit = hour % 10; end\n      3'd5: begin an = 8'b11011111; cur_digit = hour / 10; end\n      default: begin an = 8'b11111110; cur_digit = sec % 10; end\n    endcase\n  end\n\n  always @(*) begin\n    case (cur_digit)\n      4'h0: seg = 7'b1000000;\n      4'h1: seg = 7'b1111001;\n      4'h2: seg = 7'b0100100;\n      4'h3: seg = 7'b0110000;\n      4'h4: seg = 7'b0011001;\n      4'h5: seg = 7'b0010010;\n      4'h6: seg = 7'b0000010;\n      4'h7: seg = 7'b1111000;\n      4'h8: seg = 7'b0000000;\n      4'h9: seg = 7'b0010000;\n      default: seg = 7'b1111111;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, btnc;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top #(.CLK_HZ(10)) uut(.clk(clk), .btnc(btnc), .seg(seg), .an(an));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; btnc = 1;\n    #12; btnc = 0;\n    #1; $display(\"init: an=%b seg=%b expect an=11111110 seg=1000000\", an, seg);\n    repeat(590) #10;\n    while (an != 8'b11111110) #10;\n    $display(\"sec59 AN0: an=%b seg=%b expect an=11111110 seg=0010000\", an, seg);\n    #10;\n    $display(\"sec59 AN1: an=%b seg=%b expect an=11111101 seg=0010010\", an, seg);\n    repeat(10) #10;\n    while (an != 8'b11111110) #10;\n    $display(\"sec00 AN0: an=%b seg=%b expect an=11111110 seg=1000000\", an, seg);\n    #10;\n    $display(\"sec00 AN1: an=%b seg=%b expect an=11111101 seg=1000000\", an, seg);\n    #10;\n    $display(\"min01 AN2: an=%b seg=%b expect an=11111011 seg=1111001\", an, seg);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { btnc }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "mux_demux_prio": {
+    "title": "20. 2-to-1 MUX with Priority 1-to-2 DEMUX",
+    "v": "module top(\n  input a, input b, input sel_mux,\n  input prio_demux,\n  output out1, output out2\n);\n  wire selected;\n  assign selected = sel_mux ? b : a;\n\n  // Priority DEMUX: if prio_demux is high, out1 gets signal regardless; else route based on select\n  assign out1 = prio_demux ? selected : 1'b0;\n  assign out2 = (!prio_demux) ? selected : 1'b0;\nendmodule",
+    "tb": "module tb;\n  reg a;\n  reg b;\n  reg sel_mux;\n  reg prio_demux;\n  wire out1;\n  wire out2;\n  top uut(\n    .a(a),\n    .b(b),\n    .sel_mux(sel_mux),\n    .prio_demux(prio_demux),\n    .out1(out1),\n    .out2(out2)\n  );\n  initial begin\n    a = 0;\n    b = 0;\n    sel_mux = 0;\n    prio_demux = 0;\n    #10;\n    a = 1; #10;\n    b = 1; #10;\n    sel_mux = 1; #10;\n    prio_demux = 1; #10;\n    $display(\"20. 2-to-1 MUX with Priority 1-to-2 DEMUX simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { b }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sel_mux }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { prio_demux }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { out1 }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { out2 }]"
+  },
+  "sr2t_proj": {
+    "title": "21. Flip-Flop Conversion: SR to T",
+    "v": "module sr_ff(\n  input clk, input rst,\n  input s, input r,\n  output reg q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 1'b0;\n    else begin\n      case ({s, r})\n        2'b00: q <= q;\n        2'b01: q <= 1'b0;\n        2'b10: q <= 1'b1;\n        default: q <= 1'b0;\n      endcase\n    end\n  end\nendmodule\n\nmodule top(\n  input clk,\n  input rst,\n  input t,\n  output q\n);\n  wire s, r;\n  assign s = t & (~q);\n  assign r = t & q;\n  sr_ff u_sr (.clk(clk), .rst(rst), .s(s), .r(r), .q(q));\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg s;\n  reg r;\n  wire q;\n  sr_ff uut(\n    .clk(clk),\n    .rst(rst),\n    .s(s),\n    .r(r),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    s = 0;\n    r = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"21. Flip-Flop Conversion: SR to T simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { t }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "bcd2bin": {
+    "title": "22. BCD to Binary Converter",
+    "v": "module top(\n  input [7:0] bcd,\n  output [6:0] bin\n);\n  wire [3:0] tens = bcd[7:4];\n  wire [3:0] ones = bcd[3:0];\n  assign bin = tens * 4'd10 + ones;\nendmodule",
+    "tb": "module tb;\n  reg [7:0] bcd;\n  wire [6:0] bin;\n  top uut(\n    .bcd(bcd),\n    .bin(bin)\n  );\n  initial begin\n    bcd = 0;\n    #10;\n    bcd = 15; #10;\n    $display(\"22. BCD to Binary Converter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { bcd[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { bcd[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { bcd[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { bcd[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { bcd[4] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { bcd[5] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { bcd[6] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { bcd[7] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { bin[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { bin[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { bin[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { bin[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { bin[4] }]\nset_property -dict { PACKAGE_PIN V17 IOSTANDARD LVCMOS33 } [get_ports { bin[5] }]\nset_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports { bin[6] }]"
+  },
+  "xs3tobcd": {
+    "title": "23. Excess-3 to BCD Converter",
+    "v": "module top(\n  input [3:0] xs3,\n  output [3:0] bcd\n);\n  assign bcd = xs3 - 4'd3;\nendmodule",
+    "tb": "module tb;\n  reg [3:0] xs3;\n  wire [3:0] bcd;\n  top uut(\n    .xs3(xs3),\n    .bcd(bcd)\n  );\n  initial begin\n    xs3 = 0;\n    #10;\n    xs3 = 15; #10;\n    $display(\"23. Excess-3 to BCD Converter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { xs3[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { xs3[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { xs3[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { xs3[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { bcd[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { bcd[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { bcd[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { bcd[3] }]"
+  },
+  "bin2twos": {
+    "title": "24. Binary to 2's Complement Converter",
+    "v": "module top(\n  input [3:0] bin,\n  output [3:0] comp\n);\n  assign comp = ~bin + 1'b1;\nendmodule",
+    "tb": "module tb;\n  reg [3:0] bin;\n  wire [3:0] comp;\n  top uut(\n    .bin(bin),\n    .comp(comp)\n  );\n  initial begin\n    bin = 0;\n    #10;\n    bin = 15; #10;\n    $display(\"24. Binary to 2's Complement Converter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { bin[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { bin[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { bin[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { bin[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { comp[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { comp[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { comp[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { comp[3] }]"
+  },
+  "prio_mux4": {
+    "title": "25. Priority 4-to-1 MUX",
+    "v": "module top(\n  input [3:0] d,\n  input [3:0] req,\n  output reg y\n);\n  always @(*) begin\n    if (req[3]) y = d[3];\n    else if (req[2]) y = d[2];\n    else if (req[1]) y = d[1];\n    else if (req[0]) y = d[0];\n    else y = 1'b0;\n  end\nendmodule",
+    "tb": "module tb;\n  reg [3:0] d;\n  reg [3:0] req;\n  wire y;\n  top uut(\n    .d(d),\n    .req(req),\n    .y(y)\n  );\n  initial begin\n    d = 0;\n    req = 0;\n    #10;\n    d = 15; #10;\n    req = 15; #10;\n    $display(\"25. Priority 4-to-1 MUX simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { d[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { d[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { d[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { d[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { req[0] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { req[1] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { req[2] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { req[3] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { y }]"
+  },
+  "bidir_comm": {
+    "title": "26. Bidirectional Communication (MUX/DEMUX)",
+    "v": "module top(\n  input dir,\n  input data_a,\n  input data_b,\n  output reg out_a,\n  output reg out_b\n);\n  always @(*) begin\n    if (dir == 1'b0) begin\n      // A -> B\n      out_b = data_a;\n      out_a = 1'b0;\n    end else begin\n      // B -> A\n      out_a = data_b;\n      out_b = 1'b0;\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg dir;\n  reg data_a;\n  reg data_b;\n  wire out_a;\n  wire out_b;\n  top uut(\n    .dir(dir),\n    .data_a(data_a),\n    .data_b(data_b),\n    .out_a(out_a),\n    .out_b(out_b)\n  );\n  initial begin\n    dir = 0;\n    data_a = 0;\n    data_b = 0;\n    #10;\n    dir = 1; #10;\n    data_a = 1; #10;\n    data_b = 1; #10;\n    $display(\"26. Bidirectional Communication (MUX/DEMUX) simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { dir }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { data_a }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { data_b }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { out_a }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { out_b }]"
+  },
+  "seq1101_rst": {
+    "title": "27. Sequence Detector '1101' with Reset",
+    "v": "module top(\n  input clk,\n  input rst,\n  input in,\n  output reg detected\n);\n  reg [2:0] state;\n  localparam S_IDLE = 3'd0;\n  localparam S_1    = 3'd1;\n  localparam S_11   = 3'd2;\n  localparam S_110  = 3'd3;\n\n  always @(posedge clk or posedge rst) begin\n    if (rst) begin\n      state <= S_IDLE;\n      detected <= 1'b0;\n    end else begin\n      detected <= 1'b0;\n      case (state)\n        S_IDLE: state <= in ? S_1 : S_IDLE;\n        S_1:    state <= in ? S_11 : S_IDLE;\n        S_11:   state <= in ? S_11 : S_110;\n        S_110: begin\n          if (in) begin\n            state <= S_1;\n            detected <= 1'b1;\n          end else begin\n            state <= S_IDLE;\n          end\n        end\n        default: state <= S_IDLE;\n      endcase\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, rst, in;\n  wire detected;\n  top uut(.clk(clk), .rst(rst), .in(in), .detected(detected));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; in = 0;\n    #12; rst = 0; #8;\n    // Pattern: 1, 1, 0, 1 -> detected=1\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 0; #10; $display(\"in=0: detected=%b expect 0\", detected);\n    in = 1; #10; $display(\"in=1: detected=%b expect 1\", detected);\n    // Overlapping continuation: stream already in S_1, send 1, 0, 1 -> detected=1\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 0; #10; $display(\"in=0: detected=%b expect 0\", detected);\n    in = 1; #10; $display(\"in=1: detected=%b expect 1\", detected);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { in }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { detected }]"
+  },
+  "seq11010_nonover": {
+    "title": "28. Non-Overlapping Sequence Detector '11010'",
+    "v": "module top(\n  input clk,\n  input rst,\n  input in,\n  output reg detected\n);\n  reg [2:0] state;\n  localparam S0 = 3'd0, S1 = 3'd1, S2 = 3'd2, S3 = 3'd3, S4 = 3'd4;\n\n  always @(posedge clk or posedge rst) begin\n    if (rst) begin\n      state <= S0;\n      detected <= 1'b0;\n    end else begin\n      detected <= 1'b0;\n      case (state)\n        S0: state <= in ? S1 : S0;\n        S1: state <= in ? S2 : S0;\n        S2: state <= in ? S2 : S3;\n        S3: state <= in ? S4 : S0;\n        S4: begin\n          if (!in) begin\n            detected <= 1'b1;\n            state <= S0; // Non-overlapping return to S0\n          end else begin\n            state <= S1;\n          end\n        end\n        default: state <= S0;\n      endcase\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, rst, in;\n  wire detected;\n  top uut(.clk(clk), .rst(rst), .in(in), .detected(detected));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; in = 0;\n    #12; rst = 0; #8;\n    // Pattern: 1, 1, 0, 1, 0 -> detected=1\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 0; #10; $display(\"in=0: detected=%b expect 0\", detected);\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 0; #10; $display(\"in=0: detected=%b expect 1\", detected);\n    // Non-overlapping: must not detect on partial reuse\n    in = 1; #10; $display(\"in=1: detected=%b expect 0\", detected);\n    in = 0; #10; $display(\"in=0: detected=%b expect 0\", detected);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { in }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { detected }]"
+  },
+  "seq0101_startstop": {
+    "title": "29. Sequence Detector '0101' with Start/Stop",
+    "v": "module top(\n  input clk,\n  input rst,\n  input start,\n  input stop,\n  input in,\n  output reg detected,\n  output reg active\n);\n  reg [2:0] state;\n\n  always @(posedge clk or posedge rst) begin\n    if (rst) begin\n      state <= 3'd0;\n      detected <= 1'b0;\n      active <= 1'b0;\n    end else begin\n      if (stop) begin\n        active <= 1'b0;\n        state <= 3'd0;\n        detected <= 1'b0;\n      end else if (start) begin\n        active <= 1'b1;\n      end\n\n      if (active) begin\n        detected <= 1'b0;\n        case (state)\n          3'd0: state <= (!in) ? 3'd1 : 3'd0;\n          3'd1: state <= in ? 3'd2 : 3'd1;\n          3'd2: state <= (!in) ? 3'd3 : 3'd0;\n          3'd3: begin\n            if (in) begin\n              detected <= 1'b1;\n              state <= 3'd2;\n            end else begin\n              state <= 3'd1;\n            end\n          end\n          default: state <= 3'd0;\n        endcase\n      end\n    end\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk, rst, start, stop, in;\n  wire detected, active;\n  top uut(.clk(clk), .rst(rst), .start(start), .stop(stop), .in(in), .detected(detected), .active(active));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; start = 0; stop = 0; in = 1;\n    #12; rst = 0; #8;\n    // Before start: inactive\n    in = 0; #10; $display(\"inactive: active=%b detected=%b expect active=0 detected=0\", active, detected);\n    start = 1; #10; start = 0;\n    // Stream: 0, 1, 0, 1 -> detected=1\n    in = 0; #10; $display(\"in=0: active=%b detected=%b expect active=1 detected=0\", active, detected);\n    in = 1; #10; $display(\"in=1: active=%b detected=%b expect active=1 detected=0\", active, detected);\n    in = 0; #10; $display(\"in=0: active=%b detected=%b expect active=1 detected=0\", active, detected);\n    in = 1; #10; $display(\"in=1: active=%b detected=%b expect active=1 detected=1\", active, detected);\n    // Stop\n    stop = 1; #10; stop = 0;\n    in = 0; #10; $display(\"stopped: active=%b detected=%b expect active=0 detected=0\", active, detected);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { start }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { stop }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { in }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { detected }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { active }]"
+  },
+  "johnson_sr": {
+    "title": "30. Johnson Counter using SR-FF",
+    "v": "module sr_ff(\n  input clk, input rst,\n  input s, input r,\n  output reg q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 1'b0;\n    else begin\n      if (s && !r) q <= 1'b1;\n      else if (!s && r) q <= 1'b0;\n    end\n  end\nendmodule\n\nmodule top(\n  input clk,\n  input rst,\n  output [3:0] q\n);\n  wire [3:0] s, r;\n  // Inverted feedback from Q[3]\n  assign s[0] = ~q[3];\n  assign r[0] = q[3];\n\n  assign s[1] = q[0];\n  assign r[1] = ~q[0];\n\n  assign s[2] = q[1];\n  assign r[2] = ~q[1];\n\n  assign s[3] = q[2];\n  assign r[3] = ~q[2];\n\n  sr_ff ff0 (.clk(clk), .rst(rst), .s(s[0]), .r(r[0]), .q(q[0]));\n  sr_ff ff1 (.clk(clk), .rst(rst), .s(s[1]), .r(r[1]), .q(q[1]));\n  sr_ff ff2 (.clk(clk), .rst(rst), .s(s[2]), .r(r[2]), .q(q[2]));\n  sr_ff ff3 (.clk(clk), .rst(rst), .s(s[3]), .r(r[3]), .q(q[3]));\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg s;\n  reg r;\n  wire q;\n  sr_ff uut(\n    .clk(clk),\n    .rst(rst),\n    .s(s),\n    .r(r),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    s = 0;\n    r = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"30. Johnson Counter using SR-FF simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { q[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { q[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { q[3] }]"
+  },
+  "temp_celsius": {
+    "title": "31. Temp Sensor Interface (Celsius on 7-Seg)",
+    "v": "// Temperature sensor reading simulated with switches sw[7:0] (0..99 deg C)\nmodule top(\n  input clk,\n  input [7:0] sw,\n  output reg [6:0] seg,\n  output reg [7:0] an\n);\n  reg refresh_cnt;\n  reg [3:0] cur_digit;\n  wire [3:0] tens = (sw % 100) / 10;\n  wire [3:0] ones = (sw % 100) % 10;\n\n  always @(posedge clk) begin\n    refresh_cnt <= refresh_cnt + 1'b1;\n  end\n\n  always @(*) begin\n    case (refresh_cnt)\n      1'b0: begin an = 8'b11111110; cur_digit = ones; end\n      1'b1: begin an = 8'b11111101; cur_digit = tens; end\n      default: begin an = 8'b11111111; cur_digit = 4'h0; end\n    endcase\n  end\n\n  always @(*) begin\n    case (cur_digit)\n      4'h0: seg = 7'b1000000;\n      4'h1: seg = 7'b1111001;\n      4'h2: seg = 7'b0100100;\n      4'h3: seg = 7'b0110000;\n      4'h4: seg = 7'b0011001;\n      4'h5: seg = 7'b0010010;\n      4'h6: seg = 7'b0000010;\n      4'h7: seg = 7'b1111000;\n      4'h8: seg = 7'b0000000;\n      4'h9: seg = 7'b0010000;\n      default: seg = 7'b1111111;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg [7:0] sw;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top uut(.clk(clk), .sw(sw), .seg(seg), .an(an));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    // Test C=0\n    sw = 8'd0;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=0 ones: an=%b seg=%b expect an=11111110 seg=1000000\", an, seg);\n    #10; $display(\"C=0 tens: an=%b seg=%b expect an=11111101 seg=1000000\", an, seg);\n\n    // Test C=9\n    sw = 8'd9;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=9 ones: an=%b seg=%b expect an=11111110 seg=0010000\", an, seg);\n    #10; $display(\"C=9 tens: an=%b seg=%b expect an=11111101 seg=1000000\", an, seg);\n\n    // Test C=10\n    sw = 8'd10;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=10 ones: an=%b seg=%b expect an=11111110 seg=1000000\", an, seg);\n    #10; $display(\"C=10 tens: an=%b seg=%b expect an=11111101 seg=1111001\", an, seg);\n\n    // Test C=37\n    sw = 8'd37;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=37 ones: an=%b seg=%b expect an=11111110 seg=1111000\", an, seg);\n    #10; $display(\"C=37 tens: an=%b seg=%b expect an=11111101 seg=0110000\", an, seg);\n\n    // Test C=99\n    sw = 8'd99;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=99 ones: an=%b seg=%b expect an=11111110 seg=0010000\", an, seg);\n    #10; $display(\"C=99 tens: an=%b seg=%b expect an=11111101 seg=0010000\", an, seg);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { sw[4] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { sw[5] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { sw[6] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { sw[7] }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "temp_fahr": {
+    "title": "32. Temp Sensor Interface (Fahrenheit Conversion)",
+    "v": "// Temperature sensor reading simulated with switches sw[6:0] (0..100 deg C) -> F = C*9/5 + 32\nmodule top(\n  input clk,\n  input [6:0] sw,\n  output reg [6:0] seg,\n  output reg [7:0] an\n);\n  reg [1:0] refresh_cnt;\n  reg [3:0] cur_digit;\n  wire [15:0] fahr = (sw * 9) / 5 + 32;\n  wire [3:0] ones = fahr % 10;\n  wire [3:0] tens = (fahr / 10) % 10;\n  wire [3:0] hundreds = (fahr / 100) % 10;\n\n  always @(posedge clk) begin\n    refresh_cnt <= refresh_cnt + 1'b1;\n  end\n\n  always @(*) begin\n    case (refresh_cnt)\n      2'd0: begin an = 8'b11111110; cur_digit = ones; end\n      2'd1: begin an = 8'b11111101; cur_digit = tens; end\n      2'd2: begin an = 8'b11111011; cur_digit = hundreds; end\n      default: begin an = 8'b11111111; cur_digit = 4'h0; end\n    endcase\n  end\n\n  always @(*) begin\n    case (cur_digit)\n      4'h0: seg = 7'b1000000;\n      4'h1: seg = 7'b1111001;\n      4'h2: seg = 7'b0100100;\n      4'h3: seg = 7'b0110000;\n      4'h4: seg = 7'b0011001;\n      4'h5: seg = 7'b0010010;\n      4'h6: seg = 7'b0000010;\n      4'h7: seg = 7'b1111000;\n      4'h8: seg = 7'b0000000;\n      4'h9: seg = 7'b0010000;\n      default: seg = 7'b1111111;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg [6:0] sw;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top uut(.clk(clk), .sw(sw), .seg(seg), .an(an));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    // C=0 -> F=32 (032)\n    sw = 7'd0;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=0 -> F=32 ones: an=%b seg=%b expect an=11111110 seg=0100100\", an, seg);\n    #10; $display(\"C=0 -> F=32 tens: an=%b seg=%b expect an=11111101 seg=0110000\", an, seg);\n    #10; $display(\"C=0 -> F=32 hundreds: an=%b seg=%b expect an=11111011 seg=1000000\", an, seg);\n\n    // C=37 -> F=98 (098)\n    sw = 7'd37;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=37 -> F=98 ones: an=%b seg=%b expect an=11111110 seg=0000000\", an, seg);\n    #10; $display(\"C=37 -> F=98 tens: an=%b seg=%b expect an=11111101 seg=0010000\", an, seg);\n    #10; $display(\"C=37 -> F=98 hundreds: an=%b seg=%b expect an=11111011 seg=1000000\", an, seg);\n\n    // C=100 -> F=212\n    sw = 7'd100;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"C=100 -> F=212 ones: an=%b seg=%b expect an=11111110 seg=0100100\", an, seg);\n    #10; $display(\"C=100 -> F=212 tens: an=%b seg=%b expect an=11111101 seg=1111001\", an, seg);\n    #10; $display(\"C=100 -> F=212 hundreds: an=%b seg=%b expect an=11111011 seg=0100100\", an, seg);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { sw[4] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { sw[5] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { sw[6] }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "ascii2bin": {
+    "title": "33. ASCII to 5-bit Binary Converter",
+    "v": "module top(\n  input [7:0] ascii_in,\n  output [4:0] bin_out\n);\n  // 'A' is 8'd65 -> map to 5'd1\n  assign bin_out = (ascii_in >= 8'd65 && ascii_in <= 8'd90) ? (ascii_in - 8'd64) : 5'd0;\nendmodule",
+    "tb": "module tb;\n  reg [7:0] ascii_in;\n  wire [4:0] bin_out;\n  top uut(\n    .ascii_in(ascii_in),\n    .bin_out(bin_out)\n  );\n  initial begin\n    ascii_in = 0;\n    #10;\n    ascii_in = 15; #10;\n    $display(\"33. ASCII to 5-bit Binary Converter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[4] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[5] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[6] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { ascii_in[7] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { bin_out[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { bin_out[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { bin_out[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { bin_out[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { bin_out[4] }]"
+  },
+  "bin2ascii": {
+    "title": "34. 5-bit Binary to ASCII Converter",
+    "v": "module top(\n  input [4:0] bin_in,\n  output [7:0] ascii_out\n);\n  assign ascii_out = (bin_in >= 5'd1 && bin_in <= 5'd26) ? (bin_in + 8'd64) : 8'd0;\nendmodule",
+    "tb": "module tb;\n  reg [4:0] bin_in;\n  wire [7:0] ascii_out;\n  top uut(\n    .bin_in(bin_in),\n    .ascii_out(ascii_out)\n  );\n  initial begin\n    bin_in = 0;\n    #10;\n    bin_in = 15; #10;\n    $display(\"34. 5-bit Binary to ASCII Converter simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { bin_in[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { bin_in[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { bin_in[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { bin_in[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { bin_in[4] }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[3] }]\nset_property -dict { PACKAGE_PIN R18 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[4] }]\nset_property -dict { PACKAGE_PIN V17 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[5] }]\nset_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[6] }]\nset_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports { ascii_out[7] }]"
+  },
+  "jk_updown": {
+    "title": "35. 4-bit Up/Down Counter (JK-FF)",
+    "v": "module jk_ff(\n  input clk, input rst,\n  input j, input k,\n  output reg q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 1'b0;\n    else begin\n      case ({j, k})\n        2'b00: q <= q;\n        2'b01: q <= 1'b0;\n        2'b10: q <= 1'b1;\n        2'b11: q <= ~q;\n      endcase\n    end\n  end\nendmodule\n\nmodule top(\n  input clk,\n  input rst,\n  input up_down,\n  output [3:0] q\n);\n  // JK up/down counter toggle logic\n  wire [3:0] t;\n  assign t[0] = 1'b1;\n  assign t[1] = up_down ? q[0] : ~q[0];\n  assign t[2] = up_down ? (q[0] & q[1]) : (~q[0] & ~q[1]);\n  assign t[3] = up_down ? (q[0] & q[1] & q[2]) : (~q[0] & ~q[1] & ~q[2]);\n\n  jk_ff ff0 (.clk(clk), .rst(rst), .j(t[0]), .k(t[0]), .q(q[0]));\n  jk_ff ff1 (.clk(clk), .rst(rst), .j(t[1]), .k(t[1]), .q(q[1]));\n  jk_ff ff2 (.clk(clk), .rst(rst), .j(t[2]), .k(t[2]), .q(q[2]));\n  jk_ff ff3 (.clk(clk), .rst(rst), .j(t[3]), .k(t[3]), .q(q[3]));\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg j;\n  reg k;\n  wire q;\n  jk_ff uut(\n    .clk(clk),\n    .rst(rst),\n    .j(j),\n    .k(k),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    j = 0;\n    k = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"35. 4-bit Up/Down Counter (JK-FF) simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { up_down }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { q[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { q[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { q[3] }]"
+  },
+  "t2d_proj": {
+    "title": "36. T-FF to D-FF Conversion",
+    "v": "module t_ff(\n  input clk, input rst,\n  input t,\n  output reg q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q <= 1'b0;\n    else if (t) q <= ~q;\n  end\nendmodule\n\nmodule top(\n  input clk,\n  input rst,\n  input d,\n  output q\n);\n  wire t;\n  assign t = d ^ q;\n  t_ff u_tff (.clk(clk), .rst(rst), .t(t), .q(q));\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg t;\n  wire q;\n  t_ff uut(\n    .clk(clk),\n    .rst(rst),\n    .t(t),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    rst = 0;\n    t = 0;\n    #12;\n    rst = 0;\n    repeat(10) #10;\n    $display(\"36. T-FF to D-FF Conversion simulated successfully.\");\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { d }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q }]"
+  },
+  "asynch4_en": {
+    "title": "37. Asynch 4-bit Counter with Enable",
+    "v": "module top(\n  input clk,\n  input rst,\n  input en,\n  output reg [3:0] q\n);\n  always @(posedge clk or posedge rst) begin\n    if (rst) q[0] <= 1'b0;\n    else if (en) q[0] <= ~q[0];\n  end\n  always @(negedge q[0] or posedge rst) begin\n    if (rst) q[1] <= 1'b0;\n    else if (en) q[1] <= ~q[1];\n  end\n  always @(negedge q[1] or posedge rst) begin\n    if (rst) q[2] <= 1'b0;\n    else if (en) q[2] <= ~q[2];\n  end\n  always @(negedge q[2] or posedge rst) begin\n    if (rst) q[3] <= 1'b0;\n    else if (en) q[3] <= ~q[3];\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg rst;\n  reg en;\n  wire [3:0] q;\n  top uut(\n    .clk(clk),\n    .rst(rst),\n    .en(en),\n    .q(q)\n  );\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; en = 0;\n    #12; rst = 0; #8;\n    $display(\"rst: q=%0d expect 0\", q);\n    en = 1;\n    #10; $display(\"en=1: q=%0d expect 1\", q);\n    #10; $display(\"en=1: q=%0d expect 2\", q);\n    #10; $display(\"en=1: q=%0d expect 3\", q);\n    #10; $display(\"en=1: q=%0d expect 4\", q);\n    #10; $display(\"en=1: q=%0d expect 5\", q);\n    #10; $display(\"en=1: q=%0d expect 6\", q);\n    #10; $display(\"en=1: q=%0d expect 7\", q);\n    #10; $display(\"en=1: q=%0d expect 8\", q);\n    #10; $display(\"en=1: q=%0d expect 9\", q);\n    #10; $display(\"en=1: q=%0d expect 10\", q);\n    #10; $display(\"en=1: q=%0d expect 11\", q);\n    #10; $display(\"en=1: q=%0d expect 12\", q);\n    #10; $display(\"en=1: q=%0d expect 13\", q);\n    #10; $display(\"en=1: q=%0d expect 14\", q);\n    #10; $display(\"en=1: q=%0d expect 15\", q);\n    #10; $display(\"en=1: q=%0d expect 0\", q);\n    en = 0;\n    #10; $display(\"en=0 hold: q=%0d expect 0\", q);\n    #10; $display(\"en=0 hold: q=%0d expect 0\", q);\n    en = 1;\n    #10; $display(\"en=1 resume: q=%0d expect 1\", q);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN N17 IOSTANDARD LVCMOS33 } [get_ports { rst }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { en }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { q[0] }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { q[1] }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { q[2] }]\nset_property -dict { PACKAGE_PIN N14 IOSTANDARD LVCMOS33 } [get_ports { q[3] }]"
+  },
+  "mux7seg": {
+    "title": "43. Multiplexer to Display Multiple 7-Segment Numbers",
+    "v": "// Multiplexer displaying 4 hex digits from sw[15:0] across 4 7-seg displays\nmodule top(\n  input clk,\n  input [15:0] sw,\n  output reg [6:0] seg,\n  output reg [7:0] an\n);\n  reg [1:0] refresh_cnt;\n  reg [3:0] cur_digit;\n\n  always @(posedge clk) begin\n    refresh_cnt <= refresh_cnt + 1'b1;\n  end\n\n  always @(*) begin\n    case (refresh_cnt)\n      2'd0: begin an = 8'b11111110; cur_digit = sw[3:0]; end\n      2'd1: begin an = 8'b11111101; cur_digit = sw[7:4]; end\n      2'd2: begin an = 8'b11111011; cur_digit = sw[11:8]; end\n      2'd3: begin an = 8'b11110111; cur_digit = sw[15:12]; end\n      default: begin an = 8'b11111111; cur_digit = 4'h0; end\n    endcase\n  end\n\n  always @(*) begin\n    case (cur_digit)\n      4'h0: seg = 7'b1000000;\n      4'h1: seg = 7'b1111001;\n      4'h2: seg = 7'b0100100;\n      4'h3: seg = 7'b0110000;\n      4'h4: seg = 7'b0011001;\n      4'h5: seg = 7'b0010010;\n      4'h6: seg = 7'b0000010;\n      4'h7: seg = 7'b1111000;\n      4'h8: seg = 7'b0000000;\n      4'h9: seg = 7'b0010000;\n      4'hA: seg = 7'b0001000;\n      4'hB: seg = 7'b0000011;\n      4'hC: seg = 7'b1000110;\n      4'hD: seg = 7'b0100001;\n      4'hE: seg = 7'b0000110;\n      4'hF: seg = 7'b0001110;\n      default: seg = 7'b1111111;\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg clk;\n  reg [15:0] sw;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top uut(.clk(clk), .sw(sw), .seg(seg), .an(an));\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0;\n    sw = 16'h4321;\n    #10; while(an != 8'b11111110) #10;\n    $display(\"digit 0 (1): an=%b seg=%b expect an=11111110 seg=1111001\", an, seg);\n    #10; $display(\"digit 1 (2): an=%b seg=%b expect an=11111101 seg=0100100\", an, seg);\n    #10; $display(\"digit 2 (3): an=%b seg=%b expect an=11111011 seg=0110000\", an, seg);\n    #10; $display(\"digit 3 (4): an=%b seg=%b expect an=11110111 seg=0011001\", an, seg);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]\nset_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN R17 IOSTANDARD LVCMOS33 } [get_ports { sw[4] }]\nset_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports { sw[5] }]\nset_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports { sw[6] }]\nset_property -dict { PACKAGE_PIN R13 IOSTANDARD LVCMOS33 } [get_ports { sw[7] }]\nset_property -dict { PACKAGE_PIN T8 IOSTANDARD LVCMOS33 } [get_ports { sw[8] }]\nset_property -dict { PACKAGE_PIN U8 IOSTANDARD LVCMOS33 } [get_ports { sw[9] }]\nset_property -dict { PACKAGE_PIN R16 IOSTANDARD LVCMOS33 } [get_ports { sw[10] }]\nset_property -dict { PACKAGE_PIN T13 IOSTANDARD LVCMOS33 } [get_ports { sw[11] }]\nset_property -dict { PACKAGE_PIN H6 IOSTANDARD LVCMOS33 } [get_ports { sw[12] }]\nset_property -dict { PACKAGE_PIN U12 IOSTANDARD LVCMOS33 } [get_ports { sw[13] }]\nset_property -dict { PACKAGE_PIN U11 IOSTANDARD LVCMOS33 } [get_ports { sw[14] }]\nset_property -dict { PACKAGE_PIN V10 IOSTANDARD LVCMOS33 } [get_ports { sw[15] }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "bcd7seg": {
+    "title": "44. BCD to 7-Segment Decoder",
+    "v": "// BCD to 7-segment decoder: digits 0-9 decoded, 10-15 blank (all off)\nmodule top(\n  input [3:0] sw,\n  output reg [6:0] seg,\n  output [7:0] an\n);\n  assign an = 8'b11111110;\n\n  always @(*) begin\n    case (sw)\n      4'd0: seg = 7'b1000000;\n      4'd1: seg = 7'b1111001;\n      4'd2: seg = 7'b0100100;\n      4'd3: seg = 7'b0110000;\n      4'd4: seg = 7'b0011001;\n      4'd5: seg = 7'b0010010;\n      4'd6: seg = 7'b0000010;\n      4'd7: seg = 7'b1111000;\n      4'd8: seg = 7'b0000000;\n      4'd9: seg = 7'b0010000;\n      default: seg = 7'b1111111; // Blank for 10..15 (invalid BCD)\n    endcase\n  end\nendmodule",
+    "tb": "module tb;\n  reg [3:0] sw;\n  wire [6:0] seg;\n  wire [7:0] an;\n  top uut(.sw(sw), .seg(seg), .an(an));\n  integer i;\n  initial begin\n    sw = 0; #10;\n    $display(\"bcd=0: seg=%b expect 1000000\", seg);\n    sw = 1; #10; $display(\"bcd=1: seg=%b expect 1111001\", seg);\n    sw = 2; #10; $display(\"bcd=2: seg=%b expect 0100100\", seg);\n    sw = 3; #10; $display(\"bcd=3: seg=%b expect 0110000\", seg);\n    sw = 4; #10; $display(\"bcd=4: seg=%b expect 0011001\", seg);\n    sw = 5; #10; $display(\"bcd=5: seg=%b expect 0010010\", seg);\n    sw = 6; #10; $display(\"bcd=6: seg=%b expect 0000010\", seg);\n    sw = 7; #10; $display(\"bcd=7: seg=%b expect 1111000\", seg);\n    sw = 8; #10; $display(\"bcd=8: seg=%b expect 0000000\", seg);\n    sw = 9; #10; $display(\"bcd=9: seg=%b expect 0010000\", seg);\n    sw = 10; #10; $display(\"bcd=10: seg=%b expect 1111111\", seg);\n    sw = 11; #10; $display(\"bcd=11: seg=%b expect 1111111\", seg);\n    sw = 12; #10; $display(\"bcd=12: seg=%b expect 1111111\", seg);\n    sw = 13; #10; $display(\"bcd=13: seg=%b expect 1111111\", seg);\n    sw = 14; #10; $display(\"bcd=14: seg=%b expect 1111111\", seg);\n    sw = 15; #10; $display(\"bcd=15: seg=%b expect 1111111\", seg);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { sw[2] }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { sw[3] }]\nset_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { seg[0] }]\nset_property -dict { PACKAGE_PIN R10 IOSTANDARD LVCMOS33 } [get_ports { seg[1] }]\nset_property -dict { PACKAGE_PIN K16 IOSTANDARD LVCMOS33 } [get_ports { seg[2] }]\nset_property -dict { PACKAGE_PIN K13 IOSTANDARD LVCMOS33 } [get_ports { seg[3] }]\nset_property -dict { PACKAGE_PIN P15 IOSTANDARD LVCMOS33 } [get_ports { seg[4] }]\nset_property -dict { PACKAGE_PIN T11 IOSTANDARD LVCMOS33 } [get_ports { seg[5] }]\nset_property -dict { PACKAGE_PIN L18 IOSTANDARD LVCMOS33 } [get_ports { seg[6] }]\nset_property -dict { PACKAGE_PIN J17 IOSTANDARD LVCMOS33 } [get_ports { an[0] }]\nset_property -dict { PACKAGE_PIN J18 IOSTANDARD LVCMOS33 } [get_ports { an[1] }]\nset_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { an[2] }]\nset_property -dict { PACKAGE_PIN J14 IOSTANDARD LVCMOS33 } [get_ports { an[3] }]\nset_property -dict { PACKAGE_PIN P14 IOSTANDARD LVCMOS33 } [get_ports { an[4] }]\nset_property -dict { PACKAGE_PIN T14 IOSTANDARD LVCMOS33 } [get_ports { an[5] }]\nset_property -dict { PACKAGE_PIN K2 IOSTANDARD LVCMOS33 } [get_ports { an[6] }]\nset_property -dict { PACKAGE_PIN U13 IOSTANDARD LVCMOS33 } [get_ports { an[7] }]"
+  },
+  "boolopt": {
+    "title": "45. Boolean Expression Optimizer",
+    "v": "// Boolean Expression Optimizer:\n// Function F(a,b,c,d) = Sigma m(1, 3, 7, 11, 15)\n//\n// K-map simplification:\n//       cd=00  cd=01  cd=11  cd=10\n// ab=00   0      1      1      0    <- m1, m3\n// ab=01   0      0      1      0    <- m7\n// ab=11   0      0      1      0    <- m15\n// ab=10   0      0      1      0    <- m11\n//\n// Group 1: column cd=11 gives (c & d) [covers m3, m7, m11, m15]\n// Group 2: row ab=00, cols cd=01 and cd=11 gives (~a & ~b & d) [covers m1, m3]\n// Simplified result: f2 = (c & d) | (~a & ~b & d)\n//\nmodule top(\n  input a,\n  input b,\n  input c,\n  input d,\n  output f1,\n  output f2,\n  output eq\n);\n  // Unoptimized sum-of-minterms\n  assign f1 = (~a & ~b & ~c & d) |\n              (~a & ~b &  c & d) |\n              (~a &  b &  c & d) |\n              ( a & ~b &  c & d) |\n              ( a &  b &  c & d);\n\n  // Simplified form via K-map\n  assign f2 = (c & d) | (~a & ~b & d);\n\n  // Equivalence output\n  assign eq = (f1 == f2);\nendmodule",
+    "tb": "module tb;\n  reg a, b, c, d;\n  wire f1, f2, eq;\n  top uut(.a(a), .b(b), .c(c), .d(d), .f1(f1), .f2(f2), .eq(eq));\n  reg [4:0] i;\n  reg [4:0] mismatches;\n  initial begin\n    mismatches = 0;\n    for (i = 0; i < 16; i = i + 1) begin\n      {a, b, c, d} = i[3:0];\n      #10;\n      if (!eq) begin\n        $display(\"Mismatch at %b: f1=%b f2=%b\", i[3:0], f1, f2);\n        mismatches = mismatches + 1;\n      end\n    end\n    $display(\"Boolean optimizer test done: mismatches=%0d expect 0\", mismatches);\n    $finish;\n  end\nendmodule",
+    "xdc": "set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a }]\nset_property -dict { PACKAGE_PIN L16 IOSTANDARD LVCMOS33 } [get_ports { b }]\nset_property -dict { PACKAGE_PIN M13 IOSTANDARD LVCMOS33 } [get_ports { c }]\nset_property -dict { PACKAGE_PIN R15 IOSTANDARD LVCMOS33 } [get_ports { d }]\nset_property -dict { PACKAGE_PIN H17 IOSTANDARD LVCMOS33 } [get_ports { f1 }]\nset_property -dict { PACKAGE_PIN K15 IOSTANDARD LVCMOS33 } [get_ports { f2 }]\nset_property -dict { PACKAGE_PIN J13 IOSTANDARD LVCMOS33 } [get_ports { eq }]"
+  }
+};
+
+(function(){
+  if (typeof registerPreset === 'function') {
+    for (const k in PACK_PRESETS) {
+      registerPreset(k, PACK_PRESETS[k]);
+    }
+  } else if (typeof PRESETS !== 'undefined') {
+    for (const k in PACK_PRESETS) {
+      PRESETS[k] = PACK_PRESETS[k];
+    }
+    const sel = typeof $ === 'function' ? $('presetSelect') : null;
+    if (sel) {
+      for (const k in PACK_PRESETS) {
+        if (!sel.querySelector('option[value="' + k + '"]')) {
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = PACK_PRESETS[k].title || k;
+          sel.appendChild(opt);
+        }
+      }
+      const saved = typeof safeStorage !== 'undefined' ? safeStorage.get('nx4_preset') : null;
+      if (saved && PRESETS[saved]) {
+        sel.value = saved;
+      }
+    }
+  }
+})();
+
+</script>
+</body>
+</html>
